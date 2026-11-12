@@ -1,0 +1,43 @@
+{
+  "id": "ResultData",
+  "success": true,
+  "player": {
+    "balance": 3811.55
+  },
+  "payload": {
+    "matrix": [
+      [6, 1, 10, 6, 10],
+      [8, 10, 5, 5, 9],
+      [4, 9, 7, 0, 8]
+    ],
+    "paylineWins": [],
+    "scatter": {
+      "triggered": false,
+      "scatterCount": 1,
+      "positions": [
+        {
+          "row": 0,
+          "col": 1
+        }
+      ],
+      "freeGamesTriggered": false,
+      "spinsAwarded": 0,
+      "basePayout": 0.0,
+      "winInCredits": 0.0
+    },
+    "christmasGifts": {
+      "triggered": false,
+      "triggerCount": 0,
+      "pickCount": 0,
+      "positions": [],
+      "lineIndex": -1,
+      "giftCount": 6,
+      "triggerLines": []
+    },
+    "giftsBonusActive": false,
+    "baseLineWin": 0.0,
+    "freeSpinMultiplierApplied": 1.0,
+    "totalWin": 0.0,
+    "isFreeSpin": false
+  }
+}
