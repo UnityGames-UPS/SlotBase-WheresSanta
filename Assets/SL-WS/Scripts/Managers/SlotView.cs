@@ -90,6 +90,7 @@ public class SlotView : MonoBehaviour
   [Tooltip("Empty RectTransform rendered ABOVE winDarkenOverlay. Animating cells are " +
            "reparented here for the duration of their animation, then put back.")]
   [SerializeField] private RectTransform winAnimationLayer;
+  [SerializeField] private GameObject squareWinHolder;
 
   [Tooltip("How many times stage 2 walks the full list of winning lines before the " +
            "presentation settles into its idle loop.")]
@@ -323,6 +324,8 @@ public class SlotView : MonoBehaviour
     //   winDarkenOverlay.transform.SetAsLastSibling();
 
     winAnimationLayer.SetAsLastSibling();
+    if (squareWinHolder != null)
+      squareWinHolder.transform.SetAsLastSibling();
   }
 
   private void BuildWinAnimLookup()
@@ -355,6 +358,7 @@ public class SlotView : MonoBehaviour
       winDarkenOverlay.SetActive(false);
     HideAllWinLineTexts();
     if (symbolInfoCard) symbolInfoCard.HideCard();
+    SetSquareWinActive(null);
   }
 
   private void SetupSymbolButtons()
@@ -1200,6 +1204,33 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     col = flatIndex % reels;
   }
 
+  private void SetSquareWinActive(IEnumerable<int> flatPositions)
+  {
+    if (squareWinHolder == null) return;
+    var activeIndices = new HashSet<int>();
+    if (flatPositions != null)
+    {
+      foreach (int flat in flatPositions)
+      {
+        DecodeFlatIndex(flat, out int col, out int row);
+        activeIndices.Add(col * RowCount + row);
+      }
+    }
+
+    int childCount = squareWinHolder.transform.childCount;
+    for (int i = 0; i < childCount; i++)
+    {
+      var child = squareWinHolder.transform.GetChild(i).gameObject;
+      bool shouldBeActive = activeIndices.Contains(i);
+      if (child.activeSelf != shouldBeActive)
+      {
+        var graphic = child.GetComponent<UnityEngine.UI.Graphic>();
+        if (graphic != null) graphic.raycastTarget = false;
+        child.SetActive(shouldBeActive);
+      }
+    }
+  }
+
   /// <summary>
   /// Show one set of winning cells and play one synced pass over them.
   ///
@@ -1211,6 +1242,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
   {
     var wins = ResolveWinCells(flatPositions);
     ShowWinCells(wins);
+    SetSquareWinActive(flatPositions);
     yield return PlayWinPass(wins);
   }
 
@@ -1356,6 +1388,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
       if (cell != null) LowerWinCell(cell);
 
     liftedWinCells.Clear();
+    SetSquareWinActive(null);
   }
 
   internal void ShowNoWinOverlay()
@@ -1554,6 +1587,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
       StopCoroutine(winAnimationCoroutine);
       winAnimationCoroutine = null;
     }
+    SetSquareWinActive(null);
 
     if (resultCells != null)
     {

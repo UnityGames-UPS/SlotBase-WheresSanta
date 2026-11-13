@@ -126,12 +126,12 @@ TextureImporter:
       name: 0000_00000_0
       rect:
         serializedVersion: 2
-        x: 60
-        y: 48
-        width: 280
-        height: 301
+        x: 67
+        y: 724
+        width: 195
+        height: 204
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,6 +140,226 @@ TextureImporter:
       bones: []
       spriteID: 64b25c758615153c0800000000000000
       internalID: -4372624254609052858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_0
+      rect:
+        serializedVersion: 2
+        x: 292
+        y: 723
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b506617dc00977a4c864a8dd3553e968
+      internalID: 1549254764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_1
+      rect:
+        serializedVersion: 2
+        x: 507
+        y: 722
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 983f0d7b0996ad04c877bce660dda23e
+      internalID: 207819599
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_2
+      rect:
+        serializedVersion: 2
+        x: 767
+        y: 720
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4eda7a0481f88a645896de52800490cb
+      internalID: -616176563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_3
+      rect:
+        serializedVersion: 2
+        x: 782
+        y: 434
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a72aa4fcc7eb8fe4da9fd0f075219928
+      internalID: 602719048
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_4
+      rect:
+        serializedVersion: 2
+        x: 527
+        y: 431
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d8af06deb7bbcef4a8bc4f6f60b30fb9
+      internalID: 1363110822
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_5
+      rect:
+        serializedVersion: 2
+        x: 294
+        y: 435
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dcd53c38c22fec14692de2e64159723b
+      internalID: 219282367
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_6
+      rect:
+        serializedVersion: 2
+        x: 57
+        y: 431
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ed891d165ddd7d140859a3aa47b62190
+      internalID: -77474049
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_7
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 119
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bbc80132ed5b7fc4ab85db2428f217f1
+      internalID: -896205143
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_8
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 121
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1d9c0f591b3cf62479ef94f667e22e62
+      internalID: 917336793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Yellow_Numbers_9
+      rect:
+        serializedVersion: 2
+        x: 548
+        y: 121
+        width: 195
+        height: 204
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4d75d5bcbcae8e34b80de4414264df2e
+      internalID: -2091166708
       vertices: []
       indices: 
       edges: []
@@ -159,6 +379,16 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       0000_00000_0: -4372624254609052858
+      Yellow_Numbers_0: 1549254764
+      Yellow_Numbers_1: 207819599
+      Yellow_Numbers_2: -616176563
+      Yellow_Numbers_3: 602719048
+      Yellow_Numbers_4: 1363110822
+      Yellow_Numbers_5: 219282367
+      Yellow_Numbers_6: -77474049
+      Yellow_Numbers_7: -896205143
+      Yellow_Numbers_8: 917336793
+      Yellow_Numbers_9: -2091166708
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

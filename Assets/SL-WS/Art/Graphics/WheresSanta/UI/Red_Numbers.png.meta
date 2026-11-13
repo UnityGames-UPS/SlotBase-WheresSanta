@@ -127,11 +127,11 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 60
-        y: 48
-        width: 280
-        height: 301
+        y: 690
+        width: 233
+        height: 228
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,6 +140,226 @@ TextureImporter:
       bones: []
       spriteID: 64b25c758615153c0800000000000000
       internalID: -4372624254609052858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_0
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 690
+        width: 233
+        height: 230
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bd98829f110807741ad7fd47d68e7200
+      internalID: 597092166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_1
+      rect:
+        serializedVersion: 2
+        x: 521
+        y: 690
+        width: 233
+        height: 228
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c2b70235ab702b548826e676344fbdd3
+      internalID: 1537682893
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_2
+      rect:
+        serializedVersion: 2
+        x: 769
+        y: 688
+        width: 233
+        height: 235
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e272d81d207a906498e52843a7ea4868
+      internalID: 2066135187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_3
+      rect:
+        serializedVersion: 2
+        x: 781
+        y: 411
+        width: 226
+        height: 233
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bd0d37acc25bdab48b40ce2f6e4814b7
+      internalID: 789600005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_4
+      rect:
+        serializedVersion: 2
+        x: 555
+        y: 408
+        width: 233
+        height: 235
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e6a419c13bdf71e47a94cd61ec30ad19
+      internalID: 1223591360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_5
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 411
+        width: 233
+        height: 228
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e9703b2d0cca2e24dbd8408fa8c36b91
+      internalID: 328164125
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_6
+      rect:
+        serializedVersion: 2
+        x: 51
+        y: 407
+        width: 233
+        height: 235
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c4e235d2a40a404eb114030b79e950f
+      internalID: 400392938
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_7
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 117
+        width: 233
+        height: 242
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c2d4ef3657a4d4847b4951022d1ab978
+      internalID: 1845821512
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_8
+      rect:
+        serializedVersion: 2
+        x: 325
+        y: 116
+        width: 233
+        height: 242
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6145592a8aa59764ca33a8c11e5d0a17
+      internalID: 1522771595
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Red_Numbers_9
+      rect:
+        serializedVersion: 2
+        x: 568
+        y: 135
+        width: 233
+        height: 228
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a52706cc8c2f72499553469f569b3b4
+      internalID: -65815437
       vertices: []
       indices: 
       edges: []
@@ -159,6 +379,16 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       0000_00000_0: -4372624254609052858
+      Red_Numbers_0: 597092166
+      Red_Numbers_1: 1537682893
+      Red_Numbers_2: 2066135187
+      Red_Numbers_3: 789600005
+      Red_Numbers_4: 1223591360
+      Red_Numbers_5: 328164125
+      Red_Numbers_6: 400392938
+      Red_Numbers_7: 1845821512
+      Red_Numbers_8: 1522771595
+      Red_Numbers_9: -65815437
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
