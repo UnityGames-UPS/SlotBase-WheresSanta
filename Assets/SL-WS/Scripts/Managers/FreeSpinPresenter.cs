@@ -939,6 +939,7 @@ internal class FreeSpinPresenter : MonoBehaviour
       freeSpinEndScreenCanvasGroup.alpha = 0f;
 
     SetActive(freeSpinEndScreen, true);
+    AudioManager.Instance?.PlayTotalWin();
 
     if (freeSpinEndScreenCanvasGroup != null)
     {
@@ -1060,6 +1061,7 @@ internal class FreeSpinPresenter : MonoBehaviour
     if (takeRequested) return;
     takeRequested = true;
     AudioManager.Instance?.PlayTakeButton();
+    AudioManager.Instance?.StopWin();
   }
 
   private void SetTakeButton(bool active)

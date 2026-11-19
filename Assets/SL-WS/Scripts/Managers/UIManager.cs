@@ -1527,8 +1527,7 @@ public class UIManager : MonoBehaviour
         var symbol = gameManager.gameConfig.symbols.Find(s => s.id == symbolId);
         if (symbol?.multipliers == null) return;
 
-        double totalBet = gameManager != null ? gameManager.GetTotalPay() : 1.0;
-        if (totalBet <= 0) totalBet = 1.0;
+        double lineBet = (gameManager != null && gameManager.currentBetAmount > 0) ? gameManager.currentBetAmount : 1.0;
 
         string result = "";
         for (int i = 0; i < symbol.multipliers.Count; i++)
@@ -1537,7 +1536,7 @@ public class UIManager : MonoBehaviour
                 ? symbol.matchCounts[i]
                 : 5 - i;
 
-            double payout = symbol.multipliers[i] * totalBet;
+            double payout = symbol.multipliers[i] * lineBet;
             result += $"{matchCount}x    {FormatAmount(payout)}\n";
         }
         text.text = result.TrimEnd();

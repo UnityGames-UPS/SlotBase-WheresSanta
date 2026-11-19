@@ -805,7 +805,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -3231,7 +3231,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -7923,7 +7923,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -9288,7 +9288,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -40730,7 +40730,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f521a04de7f494272a617b2719edd271, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SocketIOManager
-  testToken: 842ebb60d7d0401fb97463aca9f0114f
+  testToken: 57ac6469e86b46b68b7eded678cdd19c
   gameManager: {fileID: 1206269883}
   uiManager: {fileID: 885496184}
   popupManager: {fileID: 1363796882}
@@ -42244,7 +42244,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -43366,17 +43366,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   clipBg: {fileID: 8300000, guid: 0cbf52e530c5d844b9544e29a08109cb, type: 3}
-  clipFreeSpinBg: {fileID: 0}
+  clipFreeSpinBg: {fileID: 8300000, guid: 0d7986ee8f937b04488da7f1ee4bbdb1, type: 3}
   clipButton: {fileID: 8300000, guid: 95c3f0d3de7274170a24ed1de2bfb4dc, type: 3}
   clipMaxBet: {fileID: 8300000, guid: f2e8b02ca4e5846289424250f9af5356, type: 3}
-  clipNormalWin: {fileID: 8300000, guid: b2ca4f03d370ba4498cc0b7126092714, type: 3}
+  clipNormalWin: {fileID: 8300000, guid: 6d550444c7fecbd4bb416a9f82fa6b70, type: 3}
   clipBigWins: {fileID: 8300000, guid: 3695a3674f281da409fb5c4bd9fc244f, type: 3}
   clipCongratulations: {fileID: 8300000, guid: 07769fedeae43164b8995e009fdb323f, type: 3}
-  clipFreeSpinRewarded: {fileID: 8300000, guid: baeb0d3235567f04ea9ca42dc454a3ac, type: 3}
-  clipReelSpinning: {fileID: 8300000, guid: 48d663fa148be524796b466d136d0492, type: 3}
-  clipReelAnticipation: {fileID: 8300000, guid: 876b40239848d094daff6666e9e2d342, type: 3}
-  clipReelStop: {fileID: 8300000, guid: 7da24a5c738711146b2d9b324550b421, type: 3}
-  clipScatterTrigger: {fileID: 8300000, guid: b7b09abb94ba7804f9bec1cf434e4317, type: 3}
+  clipFreeSpinRewarded: {fileID: 8300000, guid: d3733c6489c243d4893be04ed3e7db25, type: 3}
+  clipReelSpinning: {fileID: 8300000, guid: eddf52915de02e342ae9b76251019214, type: 3}
+  clipReelAnticipation: {fileID: 8300000, guid: 65d452d318088634d8e23ebdfb2f914a, type: 3}
+  clipReelStop: {fileID: 8300000, guid: d05d1d95e20821544b83aa2be36b02f9, type: 3}
+  clipScatterTrigger: {fileID: 8300000, guid: e1923f96d2721a3478190866095eddb4, type: 3}
+  clipBonusInReel: {fileID: 8300000, guid: 4b34adb47a5ee8d48b2d8a93e7d49284, type: 3}
+  bonusGameTriggeredClip: {fileID: 8300000, guid: 5b716f4a97c24454386a7a87e5cf0b9f, type: 3}
+  giftOpenClip: {fileID: 8300000, guid: ebb0ca0d9d233c34487e6fca1eeb883a, type: 3}
+  clipRemainingGifts: {fileID: 8300000, guid: d204212d3e68b5945a38e4298909fff8, type: 3}
+  totalWinClip: {fileID: 8300000, guid: b627efef3b799904bb92ba2f02cf1176, type: 3}
   musicCrossfadeDuration: 1
   sfxFadeInDuration: 0.08
   sfxFadeOutDuration: 0.25
@@ -51847,7 +51852,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 209e477351478114287c64690850e9ad, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 5e85e3386a07fe0498f5e6729dc97a83, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -54470,7 +54475,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: c004c6012e9857c4baaa34b26390042b, type: 2}
+  m_spriteAsset: {fileID: 11400000, guid: 041a560c84e4d43478f9e3b347efdb45, type: 2}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901

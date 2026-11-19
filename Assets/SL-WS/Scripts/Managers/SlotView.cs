@@ -730,6 +730,7 @@ public class SlotView : MonoBehaviour
       if (!immediate && anticipationActive)
       {
         SetGoldenEffect(col, true);
+        AudioManager.Instance?.StartAnticipationSpin();
         float duration = turbo ? turboAnticipationDuration : normalAnticipationDuration;
         float elapsed = 0f;
         while (elapsed < duration)
@@ -738,6 +739,7 @@ public class SlotView : MonoBehaviour
           {
             immediate = true;
             StopAllGoldenEffects();
+            AudioManager.Instance?.StopReelSpin();
             break;
           }
           elapsed += Time.unscaledDeltaTime;
@@ -746,7 +748,15 @@ public class SlotView : MonoBehaviour
         SetGoldenEffect(col, false);
       }
 
+      bool wasAnticipating = anticipationActive;
       StopColumn(col);
+
+      int scattersInCol = CountScattersInColumn(col);
+      int bonusInCol = CountBonusInColumn(col);
+      if (wasAnticipating && (scattersInCol > 0 || bonusInCol > 0))
+      {
+        AudioManager.Instance?.PlayBonusInReel();
+      }
 
       landedScatters += CountScattersInColumn(col);
       landedBonusSymbols += CountBonusInColumn(col);
@@ -757,7 +767,6 @@ public class SlotView : MonoBehaviour
         if (landedScatters >= minScattersForAnticipation || landedBonusSymbols >= 2)
         {
           anticipationActive = true;
-          AudioManager.Instance?.StartAnticipationSpin();
         }
       }
 
@@ -1013,9 +1022,10 @@ public class SlotView : MonoBehaviour
 
     double totalPay = gameManager != null ? gameManager.GetTotalPay() : 0;
 
-    if (winPopup != null && winPopup.ShouldShow(winAmount, totalPay))
-      winPopup.Show(winAmount, totalPay, null);
-    else if (winAmount > 0 && !HasScatterWin && !HasBonusWin)
+    // if (winPopup != null && winPopup.ShouldShow(winAmount, totalPay))
+    //   winPopup.Show(winAmount, totalPay, null);
+    // else
+    if (winAmount > 0 && !HasScatterWin && !HasBonusWin)
       AudioManager.Instance?.PlayNormalWin();
     else if (winPopup == null && !warnedNoWinPopup)
     {
@@ -1054,17 +1064,18 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     // ---- WIN POPUP: fades in over stage 1 repeating underneath --------------------------
     double totalWinAmount = gameManager != null && gameManager.lastResult != null ? gameManager.lastResult.winAmount : 0;
     double totalPay = gameManager != null ? gameManager.GetTotalPay() : 0;
-    bool showPopup = winPopup != null && winPopup.ShouldShow(totalWinAmount, totalPay);
-    bool popupDone = false;
-
-    if (showPopup)
-    {
-      // Popup shows over darkened grid WITHOUT showing all lines
-      winPopup.Show(totalWinAmount, totalPay, () => popupDone = true);
-      while (!popupDone)
-        yield return null;
-    }
-    else if (totalWinAmount > 0 && !HasScatterWin && !HasBonusWin)
+    // bool showPopup = winPopup != null && winPopup.ShouldShow(totalWinAmount, totalPay);
+    bool showPopup = false;
+    // bool popupDone = false;
+    // if (showPopup)
+    // {
+    //   // Popup shows over darkened grid WITHOUT showing all lines
+    //   winPopup.Show(totalWinAmount, totalPay, () => popupDone = true);
+    //   while (!popupDone)
+    //     yield return null;
+    // }
+    // else
+    if (totalWinAmount > 0 && !HasScatterWin && !HasBonusWin)
     {
       AudioManager.Instance?.PlayNormalWin();
     }
@@ -1442,7 +1453,14 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     HoldOverlayForFeature();
     ShowWinCells(wins);
     AudioManager.Instance?.StopWin();
-    AudioManager.Instance?.PlayScatterTrigger();
+    if (symbolId == GetBonusSymbolId())
+    {
+      AudioManager.Instance?.PlayBonusGameTriggered();
+    }
+    else
+    {
+      AudioManager.Instance?.PlayScatterTrigger();
+    }
     if (duration > 0f)
     {
       StartCoroutine(PlayWinPass(wins, loopSpine: true));

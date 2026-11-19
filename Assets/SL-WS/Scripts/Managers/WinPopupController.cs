@@ -280,12 +280,15 @@ internal class WinPopupController : MonoBehaviour
   /// </summary>
   internal bool ShouldShow(double winAmount, double totalPay)
   {
-    if (winAmount <= 0) return false;
-    var tier = GetBigWinTier();
-    if (tier == null) return false;
+    return false;
 
-    double multiplier = totalPay > 0 ? winAmount / totalPay : 0;
-    return multiplier >= tier.minMultiplier;
+    // if (winAmount <= 0) return false;
+    // var tier = GetBigWinTier();
+    // if (tier == null) return false;
+
+    // double multiplier = totalPay > 0 ? winAmount / totalPay : 0;
+    // return multiplier >= tier.minMultiplier;
+
   }
 
   /// <summary>
@@ -339,7 +342,8 @@ internal class WinPopupController : MonoBehaviour
     activeTier = tier;
     skipRequested = false;
 
-    AudioManager.Instance?.PlayWin(bigWin: true);
+    // AudioManager.Instance?.PlayWin(bigWin: true);
+    AudioManager.Instance?.PlayNormalWin();
 
     // The panel itself, before the tier's popup inside it: Awake hides the popup by
     // deactivating it, but the shared WinPanel may also be switched off in the scene, and a
@@ -364,6 +368,7 @@ internal class WinPopupController : MonoBehaviour
       }
     }
 
+    /*
     if (tier.spineGraphic == null && tier.popupRoot != null)
       tier.spineGraphic = tier.popupRoot.GetComponentInChildren<SkeletonGraphic>(true);
 
@@ -388,6 +393,7 @@ internal class WinPopupController : MonoBehaviour
 
       tier.spineGraphic.Update(0f);
     }
+    */
 
     if (tier.tierImage != null && tier.tierSprite != null)
       tier.tierImage.sprite = tier.tierSprite;

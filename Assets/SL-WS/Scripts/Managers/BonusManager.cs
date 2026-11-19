@@ -266,6 +266,8 @@ public class BonusManager : MonoBehaviour
         SetAllGiftButtonsInteractable(false);
         waitingForResult = true;
 
+        AudioManager.Instance?.PlayGiftOpen();
+
         if (socketIOManager != null)
         {
             socketIOManager.SendBonusRequest(buttonIndex);
@@ -398,6 +400,8 @@ public class BonusManager : MonoBehaviour
         if (hasRevealedRemaining) return;
         hasRevealedRemaining = true;
 
+        AudioManager.Instance?.PlayRemainingGifts();
+
         if (pickGiftText != null) pickGiftText.gameObject.SetActive(false);
 
         int buttonsToShow = giftCount > 0 ? Mathf.Min(giftCount, giftButtons.Length)
@@ -444,6 +448,7 @@ public class BonusManager : MonoBehaviour
         }
 
         if (totalWinScreen != null) totalWinScreen.SetActive(true);
+        AudioManager.Instance?.PlayTotalWin();
 
         if (totalWinText != null)
         {
@@ -489,6 +494,8 @@ public class BonusManager : MonoBehaviour
 
         if (AudioManager.Instance != null)
             AudioManager.Instance.PlayTakeButton();
+
+        AudioManager.Instance?.StopWin();
 
         SetTakeButton(false);
         SetStartButton(false);

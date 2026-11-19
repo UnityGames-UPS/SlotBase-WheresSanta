@@ -524,6 +524,9 @@ public class GameManager : MonoBehaviour
 
   private void ProcessSpinResult()
   {
+    if (lastResult == null)
+      return;
+
     playerData = lastResult.playerData;
 
     uiManager.OnSpinCompleted(lastResult);

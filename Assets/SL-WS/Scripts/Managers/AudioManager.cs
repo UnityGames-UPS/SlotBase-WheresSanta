@@ -31,6 +31,13 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip clipReelStop;
     [SerializeField] private AudioClip clipScatterTrigger;
 
+    [Header("Where's Santa SFX")]
+    [SerializeField] private AudioClip clipBonusInReel;
+    [SerializeField] private AudioClip bonusGameTriggeredClip;
+    [SerializeField] private AudioClip giftOpenClip;
+    [SerializeField] private AudioClip clipRemainingGifts;
+    [SerializeField] private AudioClip totalWinClip;
+
     [Header("Fades")]
     [SerializeField] private float musicCrossfadeDuration = 1f;
     [SerializeField] private float sfxFadeInDuration = 0.08f;
@@ -308,10 +315,18 @@ public class AudioManager : MonoBehaviour
 
     internal void StopWin() => FadeOutAndStop(winSource, sfxFadeOutDuration);
 
+    internal void PlayBonusInReel()       => PlaySfx(clipBonusInReel);
+    internal void PlayBonusGameTriggered() => PlaySfx(bonusGameTriggeredClip);
+    internal void PlayGiftOpen()           => PlaySfx(giftOpenClip);
+    internal void PlayRemainingGifts()     => PlaySfx(clipRemainingGifts);
+    internal void PlayTotalWin()           => FadeIn(winSource, totalWinClip, SfxTargetVolume, sfxFadeInDuration);
+
     /// <summary>One shared loop for all reels. A second call while it is already running is a no-op.</summary>
     internal void StartReelSpin()
     {
         if (reelSpinSource == null || clipReelSpinning == null || !_sfxEnabled) return;
+
+        reelSpinSource.loop = false;
 
         // Still playing but mid fade-out from the last stop: bring it back up instead of restarting.
         if (reelSpinSource.isPlaying && reelSpinSource.clip == clipReelSpinning)
@@ -326,15 +341,11 @@ public class AudioManager : MonoBehaviour
     internal void StartAnticipationSpin()
     {
         if (reelSpinSource == null || !_sfxEnabled) return;
+        reelSpinSource.loop = true;
         AudioClip clip = clipReelAnticipation != null ? clipReelAnticipation : clipReelSpinning;
         if (clip == null) return;
 
-        if (reelSpinSource.isPlaying && reelSpinSource.clip == clip)
-        {
-            FadeVolume(reelSpinSource, SfxTargetVolume, sfxFadeInDuration);
-            return;
-        }
-
+        reelSpinSource.Stop();
         FadeIn(reelSpinSource, clip, SfxTargetVolume, sfxFadeInDuration);
     }
 

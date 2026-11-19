@@ -36631,6 +36631,11 @@ MonoBehaviour:
   clipReelAnticipation: {fileID: 8300000, guid: 876b40239848d094daff6666e9e2d342, type: 3}
   clipReelStop: {fileID: 8300000, guid: 7da24a5c738711146b2d9b324550b421, type: 3}
   clipScatterTrigger: {fileID: 8300000, guid: b7b09abb94ba7804f9bec1cf434e4317, type: 3}
+  clipBonusInReel: {fileID: 8300000, guid: 4b34adb47a5ee8d48b2d8a93e7d49284, type: 3}
+  bonusGameTriggeredClip: {fileID: 8300000, guid: 5b716f4a97c24454386a7a87e5cf0b9f, type: 3}
+  giftOpenClip: {fileID: 8300000, guid: ebb0ca0d9d233c34487e6fca1eeb883a, type: 3}
+  clipRemainingGifts: {fileID: 8300000, guid: d204212d3e68b5945a38e4298909fff8, type: 3}
+  totalWinClip: {fileID: 8300000, guid: b627efef3b799904bb92ba2f02cf1176, type: 3}
   musicCrossfadeDuration: 1
   sfxFadeInDuration: 0.08
   sfxFadeOutDuration: 0.25
