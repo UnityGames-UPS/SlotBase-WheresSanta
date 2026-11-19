@@ -117,9 +117,9 @@ public class SlotView : MonoBehaviour
 
   [Header("Golden Reel Anticipation")]
   [SerializeField] private ImageAnimation[] goldenReelEffects;
-  [SerializeField] private int goldenCatSymbolId = 1;
+  [SerializeField] private int scatterSymbolId = 1;
   [SerializeField] private int bonusSymbolId = 2;
-  [SerializeField] private int minGoldenCatsForAnticipation = 2;
+  [SerializeField] private int minScattersForAnticipation = 2;
   [SerializeField] private float normalAnticipationDuration = 2.5f;
   [SerializeField] private float turboAnticipationDuration = 1.0f;
 
@@ -461,7 +461,7 @@ public class SlotView : MonoBehaviour
   {
     if (gameManager?.gameConfig?.symbols != null && gameManager.gameConfig.symbols.Count > 0)
     {
-      var nonWilds = gameManager.gameConfig.symbols.FindAll(s => s != null && !IsWildSymbol(s.id) && !s.isWild && !s.isScatter && s.id != goldenCatSymbolId && s.id != bonusSymbolId);
+      var nonWilds = gameManager.gameConfig.symbols.FindAll(s => s != null && !IsWildSymbol(s.id) && !s.isWild && !s.isScatter && s.id != scatterSymbolId && s.id != bonusSymbolId);
       if (nonWilds.Count > 0)
         return nonWilds[Random.Range(0, nonWilds.Count)].id;
     }
@@ -510,8 +510,9 @@ public class SlotView : MonoBehaviour
           Debug.LogError($"[SlotView] resultCells has no cell at col {col}, row {row} — check the Inspector wiring.");
           continue;
         }
-        int visualSymbolId = (stickyWilds.ContainsKey(cell)) ? RandomNonWildSymbolId() : symbolId;
-        ApplySymbol(cell, visualSymbolId);
+        // int visualSymbolId = (stickyWilds.ContainsKey(cell)) ? RandomNonWildSymbolId() : symbolId;
+        // ApplySymbol(cell, visualSymbolId);
+        ApplySymbol(cell, symbolId);
       }
     }
   }
@@ -627,10 +628,10 @@ public class SlotView : MonoBehaviour
     ResetAllCellVisuals();
     StopAllGoldenEffects();
 
-    foreach (var cell in stickyWilds.Keys)
-    {
-      if (cell != null) ApplySymbol(cell, RandomNonWildSymbolId());
-    }
+    // foreach (var cell in stickyWilds.Keys)
+    // {
+    //   if (cell != null) ApplySymbol(cell, RandomNonWildSymbolId());
+    // }
 
     // ResetAllCellVisuals already hid any locker still up from an interrupted reveal; this
     // drops our claim on those cells so the new round starts from an empty list.
@@ -720,7 +721,7 @@ public class SlotView : MonoBehaviour
 
     float stagger = turbo ? turboStopStagger : reelStopStagger;
     bool playedStopOnce = false;
-    int landedGoldenCats = 0;
+    int landedScatters = 0;
     int landedBonusSymbols = 0;
     bool anticipationActive = false;
 
@@ -747,14 +748,13 @@ public class SlotView : MonoBehaviour
 
       StopColumn(col);
 
-      landedGoldenCats += CountGoldenCatsInColumn(col);
-      if (col <= 1)
-        landedBonusSymbols += CountBonusInColumn(col);
+      landedScatters += CountScattersInColumn(col);
+      landedBonusSymbols += CountBonusInColumn(col);
 
       // Trigger golden anticipation effect one by one
       if (!anticipationActive && !immediate)
       {
-        if (landedGoldenCats >= minGoldenCatsForAnticipation || landedBonusSymbols >= 2)
+        if (landedScatters >= minScattersForAnticipation || landedBonusSymbols >= 2)
         {
           anticipationActive = true;
           AudioManager.Instance?.StartAnticipationSpin();
@@ -790,7 +790,7 @@ public class SlotView : MonoBehaviour
     // so the balance update, the return to Idle and the win presentation all wait for the
     // Mystery reveal without GameManager needing to know it exists.
     // yield return StartCoroutine(PlayStopAnimations());
-    CheckAndSpawnStickyWilds();
+    // CheckAndSpawnStickyWilds();
 
     onComplete?.Invoke();
   }
@@ -827,6 +827,7 @@ public class SlotView : MonoBehaviour
     return false;
   }
 
+    /*
   private void CheckAndSpawnStickyWilds()
   {
     if (gameManager == null || !gameManager.isInFreeSpins || winAnimationLayer == null) return;
@@ -874,6 +875,7 @@ public class SlotView : MonoBehaviour
       }
     }
   }
+    */
 
   internal void ClearStickyWilds()
   {
@@ -895,11 +897,11 @@ public class SlotView : MonoBehaviour
     return bonusSymbolId;
   }
 
-  private int GetGoldenCatSymbolId()
+  private int GetScatterSymbolId()
   {
     if (gameManager?.gameConfig != null && gameManager.gameConfig.scatterSymbolId >= 0)
       return gameManager.gameConfig.scatterSymbolId;
-    return goldenCatSymbolId;
+    return scatterSymbolId;
   }
 
   private int CountSymbolInColumn(int col, int symbolId)
@@ -913,7 +915,7 @@ public class SlotView : MonoBehaviour
     return count;
   }
 
-  private int CountGoldenCatsInColumn(int col) => CountSymbolInColumn(col, GetGoldenCatSymbolId());
+  private int CountScattersInColumn(int col) => CountSymbolInColumn(col, GetScatterSymbolId());
   private int CountBonusInColumn(int col) => CountSymbolInColumn(col, GetBonusSymbolId());
 
   private void SetGoldenEffect(int col, bool active)
@@ -984,10 +986,10 @@ public class SlotView : MonoBehaviour
     winAnimationCoroutine = StartCoroutine(PlayWinPopupOnly(winAmount, onComplete));
   }
 
-  private int CountTotalGoldenCats()
+  private int CountTotalScatters()
   {
     int count = 0;
-    int scatterId = GetGoldenCatSymbolId();
+    int scatterId = GetScatterSymbolId();
     if (resultCells != null)
     {
       foreach (var col in resultCells)
@@ -998,8 +1000,11 @@ public class SlotView : MonoBehaviour
     return count;
   }
 
-  private bool HasGoldenScatterWin => CountTotalGoldenCats() >= 3 ||
+  private bool HasScatterWin => CountTotalScatters() >= 3 ||
       (gameManager?.lastResult?.scatter != null && gameManager.lastResult.scatter.freeGamesTriggered);
+
+  internal bool HasBonusWin => (gameManager != null && gameManager.IsBonusPending()) ||
+      (gameManager?.lastResult?.christmasGifts != null && gameManager.lastResult.christmasGifts.triggered);
 
   private IEnumerator PlayWinPopupOnly(double winAmount, System.Action onComplete)
   {
@@ -1010,7 +1015,7 @@ public class SlotView : MonoBehaviour
 
     if (winPopup != null && winPopup.ShouldShow(winAmount, totalPay))
       winPopup.Show(winAmount, totalPay, null);
-    else if (winAmount > 0 && !HasGoldenScatterWin)
+    else if (winAmount > 0 && !HasScatterWin && !HasBonusWin)
       AudioManager.Instance?.PlayNormalWin();
     else if (winPopup == null && !warnedNoWinPopup)
     {
@@ -1059,12 +1064,12 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
       while (!popupDone)
         yield return null;
     }
-    else if (totalWinAmount > 0 && !HasGoldenScatterWin)
+    else if (totalWinAmount > 0 && !HasScatterWin && !HasBonusWin)
     {
       AudioManager.Instance?.PlayNormalWin();
     }
 
-    if (HasGoldenScatterWin)
+    if (HasScatterWin || HasBonusWin)
     {
       LowerAllWinCells();
       ReleaseWinOverlay();
@@ -1294,7 +1299,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     // In line order, so sibling draw order on the layer stays stable.
     foreach (var win in wins)
     {
-      if (stickyWilds.ContainsKey(win.cell)) continue;
+      // if (stickyWilds.ContainsKey(win.cell)) continue;
       if (liftedWinCells.Add(win.cell)) win.cell.MoveToAnimationLayer(winAnimationLayer);
     }
   }
@@ -1315,7 +1320,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
 
     foreach (var (cell, symbolId) in wins)
     {
-      if (stickyWilds.ContainsKey(cell)) continue;
+      // if (stickyWilds.ContainsKey(cell)) continue;
       if (winAnimById == null) BuildWinAnimLookup();
       if (!winAnimById.TryGetValue(symbolId, out var anim) || anim == null)
       {
@@ -1418,16 +1423,18 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     SetWinOverlayActive(true);
     EnforceWinLayerOrder();
   }
-  internal IEnumerator PlayScatterTriggerAnimation()
+  internal IEnumerator PlayScatterTriggerAnimation() => PlayTriggerAnimation(GetScatterSymbolId());
+  internal IEnumerator PlayBonusTriggerAnimation() => PlayTriggerAnimation(GetBonusSymbolId(), 2.0f);
+
+  internal IEnumerator PlayTriggerAnimation(int symbolId, float duration = 0f)
   {
     var wins = new List<(SlotSymbolView cell, int symbolId)>();
-    int scatterId = GetGoldenCatSymbolId();
     if (resultCells != null)
     {
       foreach (var col in resultCells)
         foreach (var cell in col.cells)
-          if (cell != null && cell.SymbolId == scatterId)
-            wins.Add((cell, scatterId));
+          if (cell != null && cell.SymbolId == symbolId)
+            wins.Add((cell, symbolId));
     }
 
     if (wins.Count == 0) yield break;
@@ -1436,7 +1443,17 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     ShowWinCells(wins);
     AudioManager.Instance?.StopWin();
     AudioManager.Instance?.PlayScatterTrigger();
-    yield return PlayWinPass(wins, loopSpine: true);
+    if (duration > 0f)
+    {
+      StartCoroutine(PlayWinPass(wins, loopSpine: true));
+      yield return new WaitForSeconds(duration);
+      LowerAllWinCells();
+      ReleaseWinOverlay();
+    }
+    else
+    {
+      yield return PlayWinPass(wins, loopSpine: true);
+    }
   }
 
   /// <summary>

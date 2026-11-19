@@ -1432,7 +1432,7 @@ public class UIManager : MonoBehaviour
     }
     internal void UpdateBalanceDisplay(bool force = false)
     {
-        if (!force && gameManager != null && gameManager.isInFreeSpins) return;
+        if (!force && gameManager != null && (gameManager.isInFreeSpins || gameManager.isInBonus)) return;
 
         SetTMPText(balanceText, balanceTextPortrait, "BALANCE : " + FormatAmount(gameManager.playerData.balance));
     }
@@ -1538,7 +1538,7 @@ public class UIManager : MonoBehaviour
                 : 5 - i;
 
             double payout = symbol.multipliers[i] * totalBet;
-            result += $"{matchCount}    {FormatAmount(payout)}\n";
+            result += $"{matchCount}x    {FormatAmount(payout)}\n";
         }
         text.text = result.TrimEnd();
     }

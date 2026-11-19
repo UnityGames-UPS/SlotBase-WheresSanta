@@ -103,6 +103,32 @@ internal class FreeSpinPresenter : MonoBehaviour
   [SerializeField] private CanvasGroup catTransitionBlackScreen;
   [SerializeField] private float blackScreenFadeOutDuration = 0.5f;
 
+  [Header("Free Spin Loading")]
+  [SerializeField] private GameObject freeSpinLoading;
+  [SerializeField] private CanvasGroup freeSpinLoadingCanvasGroup;
+  [SerializeField] private TMP_Text multiplierCountText;
+  [SerializeField] private TMP_Text freeGamesCountText;
+  [SerializeField] private float loadingFadeDuration = 0.5f;
+  [SerializeField] private float loadingHoldDuration = 3f;
+
+  [Header("Title References")]
+  [SerializeField] private GameObject title;
+  [SerializeField] private GameObject titlePortrait;
+
+  [Header("Free Spin End Screen")]
+  [SerializeField] private GameObject freeSpinEndScreen;
+  [SerializeField] private CanvasGroup freeSpinEndScreenCanvasGroup;
+  [SerializeField] private TMP_Text gameWinText;
+  [SerializeField] private TMP_Text featureWinText;
+  [SerializeField] private TMP_Text totalWinText;
+  [SerializeField] private float endScreenFadeDuration = 0.5f;
+  [SerializeField] private float textCountUpDuration = 2.5f;
+  [SerializeField] private int endScreenDecimals = 2;
+
+  [Header("Take Button")]
+  [SerializeField] private Button takeButton;
+  [SerializeField] private Button takeButtonPortrait;
+
   #endregion
 
   /// <summary>
@@ -120,6 +146,7 @@ internal class FreeSpinPresenter : MonoBehaviour
   private FreeSpinRound outroRound;
   private bool dismissRequested;
   private bool collectRequested;
+  private bool takeRequested;
   private bool introStopRequested;
 
   // Where the waves animation lived before Awake reparented it, so teardown can put it back
@@ -155,13 +182,44 @@ internal class FreeSpinPresenter : MonoBehaviour
     SetActive(congratsPopup, false);
     SetActive(catCarRoot, false);
 
+    if (freeSpinLoading != null)
+    {
+      if (freeSpinLoadingCanvasGroup == null)
+        freeSpinLoadingCanvasGroup = freeSpinLoading.GetComponent<CanvasGroup>();
+      if (freeSpinLoadingCanvasGroup != null)
+        freeSpinLoadingCanvasGroup.alpha = 0f;
+      SetActive(freeSpinLoading, false);
+    }
+    AutoDiscoverLoadingTexts();
+
+    AutoUpdateReferncesEndScreen();
+    if (freeSpinEndScreen != null)
+    {
+      if (freeSpinEndScreenCanvasGroup == null)
+        freeSpinEndScreenCanvasGroup = freeSpinEndScreen.GetComponent<CanvasGroup>();
+      if (freeSpinEndScreenCanvasGroup != null)
+        freeSpinEndScreenCanvasGroup.alpha = 0f;
+      SetActive(freeSpinEndScreen, false);
+    }
+
     if (okToProceedButton != null) okToProceedButton.onClick.AddListener(OnDismissPressed);
     if (startButton != null) startButton.onClick.AddListener(OnDismissPressed);
     if (startButtonPortrait != null) startButtonPortrait.onClick.AddListener(OnDismissPressed);
     if (congratsCollectButton != null) congratsCollectButton.onClick.AddListener(OnCollectPressed);
+    if (takeButton != null)
+    {
+      takeButton.onClick.RemoveListener(OnTakeButtonClicked);
+      takeButton.onClick.AddListener(OnTakeButtonClicked);
+    }
+    if (takeButtonPortrait != null)
+    {
+      takeButtonPortrait.onClick.RemoveListener(OnTakeButtonClicked);
+      takeButtonPortrait.onClick.AddListener(OnTakeButtonClicked);
+    }
 
     SetDismissButtons(false);
     SetCollectButton(false);
+    SetTakeButton(false);
 
     ValidateWiring();
   }
@@ -199,6 +257,8 @@ internal class FreeSpinPresenter : MonoBehaviour
     if (startButton != null) startButton.onClick.RemoveListener(OnDismissPressed);
     if (startButtonPortrait != null) startButtonPortrait.onClick.RemoveListener(OnDismissPressed);
     if (congratsCollectButton != null) congratsCollectButton.onClick.RemoveListener(OnCollectPressed);
+    if (takeButton != null) takeButton.onClick.RemoveListener(OnTakeButtonClicked);
+    if (takeButtonPortrait != null) takeButtonPortrait.onClick.RemoveListener(OnTakeButtonClicked);
 
     KillPopupTweens();
   }
@@ -236,19 +296,18 @@ internal class FreeSpinPresenter : MonoBehaviour
   {
     IsActive = true;
     uiManager?.OnWinPopupOpened();
+    SetTitlesActive(false);
 
     if (slotView != null)
       yield return StartCoroutine(slotView.PlayScatterTriggerAnimation());
 
 
-    yield return StartCoroutine(ShowTriggeredPopup(round));
-    yield return StartCoroutine(PlayTransitionAnimation(round));// play the cat animation
+    // yield return StartCoroutine(ShowTriggeredPopup(round));
+    // yield return StartCoroutine(PlayTransitionAnimation(round));// play the cat animation
 
-    if (uiManager != null)
-    {
-      // yield return StartCoroutine(uiManager.SwitchBackground(freeSpin: true));
-      uiManager.ShowFreeSpinDisplay(round.totalSpins);
-    }
+    yield return StartCoroutine(ShowFreeSpinLoading(round));
+
+    yield return StartCoroutine(WaitForStartButton());
 
 
     // From here the reels are spinning and the first result is on its way. IsIntroBlocking is
@@ -419,23 +478,23 @@ internal class FreeSpinPresenter : MonoBehaviour
 
     slotView?.SettleSymbolsForFeature();
 
+    // yield return StartCoroutine(ShowCongratulations(round));
 
-    yield return StartCoroutine(ShowCongratulations(round));
+    // Coroutine motorboat = StartCoroutine(PlayCatCar());
+    // float switchDelay = catCarDuration * catCarBackgroundSwitchAt;
+    // if (switchDelay > 0f) yield return new WaitForSeconds(switchDelay);
 
+    // Coroutine backgroundSwitch = uiManager != null
+    //     ? StartCoroutine(uiManager.SwitchBackground(freeSpin: false))
+    //     : null;
 
-    Coroutine motorboat = StartCoroutine(PlayCatCar());
-    float switchDelay = catCarDuration * catCarBackgroundSwitchAt;
-    if (switchDelay > 0f) yield return new WaitForSeconds(switchDelay);
+    // yield return motorboat;
 
-    Coroutine backgroundSwitch = uiManager != null
-        ? StartCoroutine(uiManager.SwitchBackground(freeSpin: false))
-        : null;
+    // if (backgroundSwitch != null) yield return backgroundSwitch;
 
-    yield return motorboat;
+    // uiManager?.HideFreeSpinDisplay();
 
-    if (backgroundSwitch != null) yield return backgroundSwitch;
-
-    uiManager?.HideFreeSpinDisplay();
+    yield return StartCoroutine(ShowFreeSpinEndScreen(round));
 
     slotView?.ReleaseFeatureOverlay();
 
@@ -761,6 +820,278 @@ internal class FreeSpinPresenter : MonoBehaviour
       }
   }
 
+  private IEnumerator ShowFreeSpinLoading(FreeSpinRound round)
+  {
+    if (freeSpinLoading == null) yield break;
+
+    AutoDiscoverLoadingTexts();
+
+    int spins = round != null && round.totalSpins > 0 ? round.totalSpins : 10;
+    int multiplier = GetFreeSpinMultiplier(round);
+
+    if (freeGamesCountText != null)
+      SpriteNumberFormatter.Apply(freeGamesCountText, spins, maxDecimals: 0, grouping: false);
+
+    if (multiplierCountText != null)
+      SpriteNumberFormatter.Apply(multiplierCountText, multiplier, maxDecimals: 0, grouping: false);
+
+    if (freeSpinLoadingCanvasGroup == null)
+      freeSpinLoadingCanvasGroup = freeSpinLoading.GetComponent<CanvasGroup>();
+
+    if (freeSpinLoadingCanvasGroup != null)
+      freeSpinLoadingCanvasGroup.alpha = 0f;
+
+    SetActive(freeSpinLoading, true);
+
+    if (freeSpinLoadingCanvasGroup != null)
+    {
+      yield return freeSpinLoadingCanvasGroup
+          .DOFade(1f, loadingFadeDuration)
+          .WaitForCompletion();
+    }
+
+    Coroutine bgSwitch = null;
+    if (uiManager != null)
+    {
+      bgSwitch = StartCoroutine(uiManager.SwitchBackground(freeSpin: true));
+      uiManager.ShowFreeSpinDisplay(round != null ? round.totalSpins : spins);
+    }
+
+    yield return new WaitForSeconds(loadingHoldDuration);
+
+    if (bgSwitch != null)
+      yield return bgSwitch;
+
+    if (freeSpinLoadingCanvasGroup != null)
+    {
+      yield return freeSpinLoadingCanvasGroup
+          .DOFade(0f, loadingFadeDuration)
+          .WaitForCompletion();
+    }
+
+    SetActive(freeSpinLoading, false);
+  }
+
+  private void SetTitlesActive(bool active)
+  {
+    if (title != null) title.SetActive(active);
+    if (titlePortrait != null) titlePortrait.SetActive(active);
+  }
+
+  private int GetFreeSpinMultiplier(FreeSpinRound round)
+  {
+    if (round != null && round.multiplier > 0)
+      return round.multiplier;
+
+    if (gameManager?.gameConfig?.features?.freeGames != null && gameManager.gameConfig.features.freeGames.winMultiplier > 0)
+      return gameManager.gameConfig.features.freeGames.winMultiplier;
+
+    return 3;
+  }
+
+  private IEnumerator WaitForStartButton()
+  {
+    dismissRequested = false;
+    SetDismissButtons(true);
+
+    while (!dismissRequested) yield return null;
+
+    SetDismissButtons(false);
+  }
+
+  private void AutoDiscoverLoadingTexts()
+  {
+    if (freeSpinLoading == null) return;
+    if (freeSpinLoadingCanvasGroup == null)
+      freeSpinLoadingCanvasGroup = freeSpinLoading.GetComponent<CanvasGroup>();
+
+    if (multiplierCountText == null || freeGamesCountText == null)
+    {
+      var texts = freeSpinLoading.GetComponentsInChildren<TMP_Text>(true);
+      foreach (var t in texts)
+      {
+        if (multiplierCountText == null && t.gameObject.name.IndexOf("multiplier", StringComparison.OrdinalIgnoreCase) >= 0)
+          multiplierCountText = t;
+        else if (freeGamesCountText == null && (t.gameObject.name.IndexOf("freegames", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 t.gameObject.name.IndexOf("count", StringComparison.OrdinalIgnoreCase) >= 0))
+          freeGamesCountText = t;
+      }
+    }
+  }
+
+  private IEnumerator ShowFreeSpinEndScreen(FreeSpinRound round)
+  {
+    yield return new WaitForSeconds(1.0f);
+
+    AutoUpdateReferncesEndScreen();
+
+    if (freeSpinEndScreen == null)
+    {
+      uiManager?.UpdateBalanceDisplay(force: true);
+      SetTitlesActive(true);
+      yield break;
+    }
+
+    if (freeSpinEndScreenCanvasGroup == null)
+      freeSpinEndScreenCanvasGroup = freeSpinEndScreen.GetComponent<CanvasGroup>();
+
+    if (freeSpinEndScreenCanvasGroup != null)
+      freeSpinEndScreenCanvasGroup.alpha = 0f;
+
+    SetActive(freeSpinEndScreen, true);
+
+    if (freeSpinEndScreenCanvasGroup != null)
+    {
+      yield return freeSpinEndScreenCanvasGroup
+          .DOFade(1f, endScreenFadeDuration)
+          .WaitForCompletion();
+    }
+
+    if (uiManager != null)
+    {
+      StartCoroutine(uiManager.SwitchBackground(freeSpin: false));
+      uiManager.HideFreeSpinDisplay();
+    }
+
+    double gameWin = GetGameWinAmount(round);
+    double featureWin = GetFeatureWinAmount(round);
+    double totalWin = GetTotalWinAmount(round);
+
+    int decimals = endScreenDecimals > 0 ? endScreenDecimals : 2;
+
+    if (gameWinText != null)
+      SpriteNumberFormatter.ApplyFixed(gameWinText, 0d, decimals, grouping: false);
+    if (featureWinText != null)
+      SpriteNumberFormatter.ApplyFixed(featureWinText, 0d, decimals, grouping: false);
+    if (totalWinText != null)
+      SpriteNumberFormatter.ApplyFixed(totalWinText, 0d, decimals, grouping: false);
+
+    if (gameWin > 0 && gameWinText != null)
+      yield return StartCoroutine(CountUpText(gameWinText, gameWin, textCountUpDuration));
+
+    if (featureWin > 0 && featureWinText != null)
+      yield return StartCoroutine(CountUpText(featureWinText, featureWin, textCountUpDuration));
+
+    if (totalWin > 0 && totalWinText != null)
+      yield return StartCoroutine(CountUpText(totalWinText, totalWin, textCountUpDuration));
+
+    SetDismissButtons(false);
+    uiManager?.SetSpinStopButtonStates(isSpinningState: false, isInteractable: false);
+
+    takeRequested = false;
+    SetTakeButton(true);
+
+    while (!takeRequested) yield return null;
+
+    SetTakeButton(false);
+
+    uiManager?.UpdateBalanceDisplay(force: true);
+
+    SetTitlesActive(true);
+
+    if (freeSpinEndScreenCanvasGroup != null)
+    {
+      yield return freeSpinEndScreenCanvasGroup
+          .DOFade(0f, endScreenFadeDuration)
+          .WaitForCompletion();
+    }
+
+    SetActive(freeSpinEndScreen, false);
+  }
+
+  private IEnumerator CountUpText(TMP_Text targetText, double targetAmount, float duration)
+  {
+    if (targetText == null) yield break;
+
+    int decimals = endScreenDecimals > 0 ? endScreenDecimals : 2;
+    float elapsed = 0f;
+    while (elapsed < duration)
+    {
+      elapsed += Time.deltaTime;
+      double current = targetAmount * Mathf.Clamp01(elapsed / duration);
+      SpriteNumberFormatter.ApplyFixed(targetText, current, decimals, grouping: false);
+      yield return null;
+    }
+
+    SpriteNumberFormatter.ApplyFixed(targetText, targetAmount, decimals, grouping: false);
+  }
+
+  private double GetGameWinAmount(FreeSpinRound round)
+  {
+    if (gameManager?.lastResult != null && gameManager.lastResult.gameWin > 0)
+      return gameManager.lastResult.gameWin;
+
+    if (gameManager?.lastResult != null && gameManager.lastResult.baseLineWin > 0)
+      return gameManager.lastResult.baseLineWin;
+
+    if (round != null && round.triggerWin > 0)
+      return round.triggerWin;
+
+    return 0;
+  }
+
+  private double GetFeatureWinAmount(FreeSpinRound round)
+  {
+    if (gameManager?.lastResult != null && gameManager.lastResult.featureWin > 0)
+      return gameManager.lastResult.featureWin;
+
+    if (round != null && round.featureWins > 0)
+      return round.featureWins;
+
+    return 0;
+  }
+
+  private double GetTotalWinAmount(FreeSpinRound round)
+  {
+    if (gameManager?.lastResult != null && gameManager.lastResult.totalWin > 0)
+      return gameManager.lastResult.totalWin;
+
+    if (round != null && round.accumulatedWin > 0)
+      return round.accumulatedWin;
+
+    if (gameManager?.lastResult != null && gameManager.lastResult.grandTotalWin > 0)
+      return gameManager.lastResult.grandTotalWin;
+
+    return 0;
+  }
+
+  public void OnTakeButtonClicked()
+  {
+    if (takeRequested) return;
+    takeRequested = true;
+    AudioManager.Instance?.PlayTakeButton();
+  }
+
+  private void SetTakeButton(bool active)
+  {
+    SetButton(takeButton, active);
+    SetButton(takeButtonPortrait, active);
+  }
+
+  private void AutoUpdateReferncesEndScreen()
+  {
+    if (freeSpinEndScreen != null)
+    {
+      if (freeSpinEndScreenCanvasGroup == null)
+        freeSpinEndScreenCanvasGroup = freeSpinEndScreen.GetComponent<CanvasGroup>();
+
+      if (gameWinText == null || featureWinText == null || totalWinText == null)
+      {
+        var texts = freeSpinEndScreen.GetComponentsInChildren<TMP_Text>(true);
+        foreach (var t in texts)
+        {
+          string n = t.gameObject.name;
+          if (gameWinText == null && n.IndexOf("GameWin", StringComparison.OrdinalIgnoreCase) >= 0)
+            gameWinText = t;
+          else if (featureWinText == null && n.IndexOf("FeatureWin", StringComparison.OrdinalIgnoreCase) >= 0)
+            featureWinText = t;
+          else if (totalWinText == null && (n.IndexOf("TotalWin", StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Total", StringComparison.OrdinalIgnoreCase) >= 0))
+            totalWinText = t;
+        }
+      }
+    }
+  }
+
   #endregion
 
   #region Teardown
@@ -812,13 +1143,27 @@ internal class FreeSpinPresenter : MonoBehaviour
     SpriteNumberFormatter.Clear(congratsTotalWinText);
     ShowWinPanel(false);
     SetActive(catCarRoot, false);
+    if (freeSpinLoadingCanvasGroup != null)
+    {
+      freeSpinLoadingCanvasGroup.DOKill();
+      freeSpinLoadingCanvasGroup.alpha = 0f;
+    }
+    SetActive(freeSpinLoading, false);
+    if (freeSpinEndScreenCanvasGroup != null)
+    {
+      freeSpinEndScreenCanvasGroup.DOKill();
+      freeSpinEndScreenCanvasGroup.alpha = 0f;
+    }
+    SetActive(freeSpinEndScreen, false);
     SetDismissButtons(false);
     SetCollectButton(false);
+    SetTakeButton(false);
 
     // KillWinTweens released the WIN hold on the darkening panel before calling us, but the
     // feature hold is deliberately immune to that — without this the grid would stay dark for
     // the rest of the session.
     slotView?.ReleaseFeatureOverlay();
+    SetTitlesActive(true);
 
     outroRound = null;
 
@@ -833,6 +1178,8 @@ internal class FreeSpinPresenter : MonoBehaviour
   private void KillPopupTweens()
   {
     triggeredPopupRect?.DOKill();
+    freeSpinLoadingCanvasGroup?.DOKill();
+    freeSpinEndScreenCanvasGroup?.DOKill();
   }
 
   private static void SetActive(GameObject target, bool active)

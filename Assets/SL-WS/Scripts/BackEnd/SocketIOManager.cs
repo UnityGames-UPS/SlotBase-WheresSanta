@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,6 +19,7 @@ public class SocketIOManager : MonoBehaviour
 
     [SerializeField] private UIManager uiManager;
     [SerializeField] private PopupManager popupManager;
+    [SerializeField] internal BonusManager bonusManager;
     [SerializeField] internal JSFunctCalls JSManager;
     [SerializeField] private GameObject RaycastBlocker;
     [SerializeField] private List<Button> buttons;
@@ -199,6 +200,7 @@ public class SocketIOManager : MonoBehaviour
 
         gameSocket.On<string>("game:init", OnInitReceived);
         gameSocket.On<string>("result", OnResultReceived);
+        gameSocket.On<string>("result", OnBonusResultReceived);
         gameSocket.On<string>("pong", OnPongReceived);
         gameSocket.On("pong", OnPongReceivedNoArgs);
         gameSocket.On<string>("AnotherDevice", OnAnotherDevice);
@@ -620,7 +622,59 @@ public class SocketIOManager : MonoBehaviour
 
     #endregion
 
+    #region Bonus Request
 
+    internal void SendBonusRequest(int giftIndex)
+    {
+        var request = new BonusRequest
+        {
+            type = "BONUS",
+            payload = new BonusRequestPayload
+            {
+                Event = "tap",
+                index = giftIndex
+            }
+        };
+
+        string json = JsonConvert.SerializeObject(request);
+        Debug.Log($"[SocketIO] Bonus request sent: {json}");
+        if (gameSocket != null)
+            gameSocket.Emit("request", json);
+    }
+
+    private void OnBonusResultReceived(string jsonData)
+    {
+        if (!jsonData.Contains("\"id\":\"bonusResult\""))
+            return;
+
+        Debug.Log($"[SocketIO] Bonus result received: {jsonData}");
+
+        try
+        {
+            var bonusResult = JsonConvert.DeserializeObject<BonusResultData>(jsonData);
+
+            if (bonusResult == null || !bonusResult.success)
+            {
+                Debug.LogError("[SocketIO] Bonus result failed or null");
+                return;
+            }
+
+            if (bonusResult.player?.balance != null && gameManager != null && gameManager.playerData != null)
+            {
+                gameManager.playerData.balance = bonusResult.player.balance.Value;
+                if (uiManager != null) uiManager.UpdateBalanceDisplay();
+            }
+
+            if (bonusManager != null && bonusResult.payload != null)
+                bonusManager.OnBonusResult(bonusResult.payload);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SocketIO] Bonus result parse failed: {e.Message}");
+        }
+    }
+
+    #endregion
 
     #region Cleanup
 

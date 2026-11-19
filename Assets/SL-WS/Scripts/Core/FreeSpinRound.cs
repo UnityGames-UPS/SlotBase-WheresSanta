@@ -82,6 +82,8 @@ internal class FreeSpinRound
   /// <summary>Derived each spin as totalSpins - freeSpinsRemaining.</summary>
   internal int spinsUsed;
 
+  internal int multiplier = 1;
+
   /// <summary>
   /// The round's running total, for the bottom bar and the congratulations panel.
   ///
@@ -91,6 +93,8 @@ internal class FreeSpinRound
   /// rather than blanking and starting again.
   /// </summary>
   internal double accumulatedWin;
+  internal double triggerWin;
+  internal double featureWins;
 
   /// <summary>
   /// Free spins the Blue meter held at the moment of the trigger — what the blue intro popup
@@ -103,12 +107,14 @@ internal class FreeSpinRound
   internal int redWildCount;
 
 
-  internal static FreeSpinRound FromTrigger(int totalSpins, double triggerWin)
+  internal static FreeSpinRound FromTrigger(int totalSpins, double triggerWin, int multiplier = 1)
   {
     return new FreeSpinRound
     {
       totalSpins = Mathf.Max(0, totalSpins),
-      accumulatedWin = triggerWin
+      accumulatedWin = triggerWin,
+      triggerWin = triggerWin,
+      multiplier = Mathf.Max(1, multiplier)
     };
   }
 
@@ -119,6 +125,7 @@ internal class FreeSpinRound
   internal void RecordSpin(double winAmount, int freeSpinsRemaining)
   {
     accumulatedWin += winAmount;
+    featureWins += winAmount;
     spinsUsed = Mathf.Clamp(totalSpins - freeSpinsRemaining, 0, totalSpins);
   }
 }

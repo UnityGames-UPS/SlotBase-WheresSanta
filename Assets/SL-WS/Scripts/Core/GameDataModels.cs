@@ -1,4 +1,4 @@
-using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
@@ -249,6 +249,8 @@ public class ServerPayload
   public double baseLineWin;
   public double freeSpinMultiplierApplied;
   public double totalWin;
+  public double gameWin;
+  public double featureWin;
   public bool isFreeSpin;
 
   /// <summary>Mystery tiles that opened this spin, as [row, col].</summary>
@@ -283,15 +285,68 @@ public class ServerPayload
 }
 
 [Serializable]
+public class ChristmasGiftPosition
+{
+    public int row;
+    public int col;
+}
+
+[Serializable]
+public class ChristmasGiftTriggerLine
+{
+    public int lineIndex;
+    public int triggerCount;
+    public List<ChristmasGiftPosition> positions;
+}
+
+[Serializable]
 public class ChristmasGiftsData
 {
     public bool triggered;
     public int triggerCount;
     public int pickCount;
-    public List<object> positions;
+    public List<ChristmasGiftPosition> positions;
     public int lineIndex;
     public int giftCount;
-    public List<int> triggerLines;
+    public List<ChristmasGiftTriggerLine> triggerLines;
+}
+
+
+[Serializable]
+public class BonusRequest
+{
+    public string type = "BONUS";
+    public BonusRequestPayload payload;
+}
+
+[Serializable]
+public class BonusRequestPayload
+{
+    public string Event = "tap";
+    public int index;
+}
+
+[Serializable]
+public class BonusResultData
+{
+    public string id;
+    public bool success;
+    public ServerPlayerBalance player;
+    public BonusResultPayload payload;
+}
+
+[Serializable]
+public class BonusResultPayload
+{
+    public int giftIndex;
+    public double prizeMultiplier;
+    public double prizeWin;
+    public int picksMade;
+    public int pickCount;
+    public double totalBonusWin;
+    public List<int> selectedIndexes;
+    public bool isOver;
+    public double currentWinning;
 }
 
 [Serializable]
@@ -548,6 +603,14 @@ public class SpinResult
   public int serverTotalSpins;
   public double serverTotalRoundWin;
   public bool isRoundOver;
+
+  public double baseLineWin;
+  public double gameWin;
+  public double featureWin;
+  public double totalWin;
+
+  public bool giftsBonusActive;
+  public ChristmasGiftsData christmasGifts;
 
 }
 
@@ -996,7 +1059,15 @@ public static class InitDataConverter
       serverSpinsUsed = 0,
       serverTotalSpins = scatterObj != null ? scatterObj.spinsAwarded : 0,
       serverTotalRoundWin = winAmountVal,
-      isRoundOver = spinsRemaining <= 0
+      isRoundOver = spinsRemaining <= 0,
+
+      baseLineWin = payload != null ? payload.baseLineWin : 0,
+      gameWin = payload != null ? payload.gameWin : 0,
+      featureWin = payload != null ? payload.featureWin : 0,
+      totalWin = payload != null ? payload.totalWin : 0,
+
+      giftsBonusActive = payload != null && payload.giftsBonusActive,
+      christmasGifts = payload?.christmasGifts
     };
 
     return result;

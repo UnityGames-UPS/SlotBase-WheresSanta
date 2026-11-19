@@ -144,10 +144,6 @@ public class SlotSymbolView : MonoBehaviour
 
     homeParent = transform.parent;
     homeSiblingIndex = transform.GetSiblingIndex();
-
-    if (winLineText == null)
-      winLineText = transform.Find("WinLineText")?.GetComponent<TMPro.TMP_Text>();
-
   }
 
   #region Win animation layer
@@ -486,11 +482,7 @@ public class SlotSymbolView : MonoBehaviour
 
   internal void ShowWinText(double amount)
   {
-    if (winLineText == null)
-    {
-      winLineText = transform.Find("WinLineText")?.GetComponent<TMPro.TMP_Text>();
-      if (winLineText == null) return;
-    }
+    if (winLineText == null) return;
 
     // tint: true is required here and nowhere else in the meters — this label is FADED in and
     // out below, and DOFade only writes the text colour. An untinted sprite glyph carries its

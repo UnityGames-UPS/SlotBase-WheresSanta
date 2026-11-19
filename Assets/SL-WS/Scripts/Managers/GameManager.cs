@@ -1,4 +1,4 @@
-using System.Collections;
+﻿﻿﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
   [SerializeField] private PopupManager popupManager;
   [SerializeField] private SlotView slotView;
   [SerializeField] private FreeSpinPresenter freeSpinPresenter;
+  [SerializeField] internal BonusManager bonusManager;
 
   [Header("Spin Settings")]
   [SerializeField] private float normalSpinDuration = 3.5f;
@@ -31,6 +32,7 @@ public class GameManager : MonoBehaviour
   internal int autoPlayRemainingRounds;
 
   internal bool isInFreeSpins;
+  internal bool isInBonus;
   internal int freeSpinsRemaining;
   internal int freeSpinsUsed;
   internal bool waitingForFreeSpinStart;
@@ -320,7 +322,11 @@ public class GameManager : MonoBehaviour
     }
 
     if (spins > 0)
-      pendingRound = FreeSpinRound.FromTrigger(spins, lastResult.winAmount);
+    {
+      int mult = (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.winMultiplier > 0)
+          ? gameConfig.features.freeGames.winMultiplier : 3;
+      pendingRound = FreeSpinRound.FromTrigger(spins, lastResult.winAmount, mult);
+    }
   }
 
 
@@ -341,7 +347,10 @@ public class GameManager : MonoBehaviour
     // reads currentRound.accumulatedWin, so doing it after (as ProcessSpinResult used to) left
     // the bottom bar showing the previous spin's total all the way through this one.
     if (isInFreeSpins && currentRound != null && lastResult != null)
+    {
       currentRound.RecordSpin(lastResult.winAmount, lastResult.serverSpinsRemaining);
+      uiManager.UpdateFreeSpinCount(currentRound.spinsUsed);
+    }
 
     // The HUD updates straight away and the state returns to Idle; the win presentation
     // plays out on top and does not gate that. SlotView fires OnWinAnimationComplete at the
@@ -398,17 +407,12 @@ public class GameManager : MonoBehaviour
       yield return null;
     }
 
-    // The single guaranteed unlock for the lock OnReelsStoppedComplete puts on a winning
-    // spin. Every path through the presentation passes here, popup or not. Redundant after
-    // OnWinPopupClosed, which has already done it — and harmless, because the method is
-    // idempotent and no-ops while any special win is still flagged.
-    uiManager.EnableControlsAfterWinAnimation();
-
     // The free-spin trigger presentation lands here, after the coin flights and the whole win
     // presentation have played. It does NOT fall through to ResumeAfterSpecialFeature: the
     // presenter starts the first free spin itself, once the player has dismissed its popup.
     if (pendingRound != null)
     {
+      uiManager.EnableControlsAfterWinAnimation();
       var round = pendingRound;
       pendingRound = null;
 
@@ -427,6 +431,29 @@ public class GameManager : MonoBehaviour
       yield break;
     }
 
+    if (IsBonusPending())
+    {
+      if (isAutoPlaying) StopAutoPlay();
+      uiManager.DisableControlsDuringWinAnimation();
+
+      if (lastResult != null)
+      {
+        playerData = lastResult.playerData;
+        uiManager.OnSpinCompleted(lastResult);
+        lastResult = null;
+      }
+      uiManager.DisableControlsDuringWinAnimation();
+
+      if (slotView != null)
+      {
+        yield return slotView.PlayBonusTriggerAnimation();
+      }
+
+      TriggerBonus();
+      yield break;
+    }
+
+    uiManager.EnableControlsAfterWinAnimation();
     ResumeAfterSpecialFeature();
   }
 
@@ -481,6 +508,17 @@ public class GameManager : MonoBehaviour
     {
       freeSpinsRemaining = result.serverSpinsRemaining;
       freeSpinsUsed = currentRound != null ? currentRound.totalSpins - freeSpinsRemaining : 0;
+    }
+
+    if (result.giftsBonusActive && result.christmasGifts != null && result.christmasGifts.triggered)
+    {
+      pendingBonusPickCount = result.christmasGifts.pickCount;
+      pendingBonusGiftCount = result.christmasGifts.giftCount;
+    }
+    else
+    {
+      pendingBonusPickCount = 0;
+      pendingBonusGiftCount = 0;
     }
   }
 
@@ -695,6 +733,9 @@ public class GameManager : MonoBehaviour
   /// </summary>
   private IEnumerator EndFreeSpinsRoutine()
   {
+    if (currentRound != null && uiManager != null)
+      uiManager.UpdateFreeSpinCount(currentRound.totalSpins);
+
     if (freeSpinPresenter != null && currentRound != null)
     {
       freeSpinPresenter.BeginOutro(currentRound);
@@ -782,6 +823,43 @@ public class GameManager : MonoBehaviour
 
     return count;
   }
+
+  #region Bonus
+
+  internal int pendingBonusPickCount;
+  internal int pendingBonusGiftCount;
+
+  internal bool IsBonusPending()
+  {
+    return bonusManager != null && pendingBonusPickCount > 0 && pendingBonusGiftCount > 0;
+  }
+
+  private void TriggerBonus()
+  {
+    if (isAutoPlaying) StopAutoPlay();
+    isInBonus = true;
+    int picks = pendingBonusPickCount;
+    int gifts = pendingBonusGiftCount;
+    pendingBonusPickCount = 0;
+    pendingBonusGiftCount = 0;
+
+    uiManager.DisableControlsDuringWinAnimation();
+
+    bonusManager.socketIOManager = socketManager;
+    bonusManager.gameManager = this;
+    bonusManager.uiManager = uiManager;
+    bonusManager.InitializeBonusData(picks, gifts);
+    bonusManager.StartBonus();
+  }
+
+  internal void OnBonusComplete()
+  {
+    isInBonus = false;
+    currentState = GameState.Idle;
+    uiManager.EnableControlsAfterWinAnimation();
+  }
+
+  #endregion
 
   private bool ResultMatrixHasScatter(List<List<int>> matrix)
   {
