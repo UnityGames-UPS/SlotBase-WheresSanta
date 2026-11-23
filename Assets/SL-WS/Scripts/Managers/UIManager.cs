@@ -548,7 +548,7 @@ public class UIManager : MonoBehaviour
             // lands — so the player sees "2 of 10" for the whole of spin 2 instead of the
             // number changing under them partway through it.
             if (gameManager.currentRound != null)
-                UpdateFreeSpinCount(gameManager.currentRound.spinsUsed);
+                UpdateFreeSpinCount(gameManager.freeSpinsRemaining, gameManager.currentRound.totalSpins);
         }
         else
         {
@@ -1186,7 +1186,7 @@ public class UIManager : MonoBehaviour
         if (freeSpinDisplayRoot) freeSpinDisplayRoot.SetActive(true);
         SpriteNumberFormatter.Apply(totalFSText, totalSpins, maxDecimals: 0, grouping: false);
 
-        UpdateFreeSpinCount(0, totalSpins);
+        UpdateFreeSpinCount(totalSpins, totalSpins);
     }
 
     internal void HideFreeSpinDisplay()
@@ -1201,8 +1201,7 @@ public class UIManager : MonoBehaviour
     /// Displayed 1-BASED: while the first free spin is on screen the counter reads 1, not 0,
     /// so it ticks to 2 exactly as the second spin's reels start rather than lagging a spin
     /// behind. Clamped to the total so the last spin cannot read "11 of 10".
-    /// </summary>
-    internal void UpdateFreeSpinCount(int playedSpins, int totalSpins = -1)
+    internal void UpdateFreeSpinCount(int remainingSpins, int totalSpins = -1)
     {
         if (totalSpins > 0)
         {
@@ -1210,9 +1209,9 @@ public class UIManager : MonoBehaviour
             SpriteNumberFormatter.Apply(totalFSText, totalFreeSpinsAwarded, maxDecimals: 0, grouping: false);
         }
 
-        int remaining = Mathf.Clamp(totalFreeSpinsAwarded - playedSpins, 0, Mathf.Max(0, totalFreeSpinsAwarded));
+        int displayCount = Mathf.Clamp(remainingSpins, 0, Mathf.Max(0, totalFreeSpinsAwarded));
 
-        SpriteNumberFormatter.Apply(currentFSText, remaining, maxDecimals: 0, grouping: false);
+        SpriteNumberFormatter.Apply(currentFSText, displayCount, maxDecimals: 0, grouping: false);
     }
 
     private void OnEnable()
@@ -1437,7 +1436,7 @@ public class UIManager : MonoBehaviour
         SetTMPText(balanceText, balanceTextPortrait, "BALANCE : " + FormatAmount(gameManager.playerData.balance));
     }
 
-    private void UpdateWinDisplay(double amount)
+    internal void UpdateWinDisplay(double amount)
     {
         currentWinDisplayValue = amount;
         if (winAmountText) winAmountText.text = FormatAmount(amount);

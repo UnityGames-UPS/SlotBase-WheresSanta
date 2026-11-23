@@ -118,6 +118,14 @@ internal class FreeSpinRound
     };
   }
 
+  internal void AddSpins(int extraSpins)
+  {
+    if (extraSpins > 0)
+    {
+      totalSpins += extraSpins;
+    }
+  }
+
   /// <summary>
   /// Fold one completed free spin in. <paramref name="freeSpinsRemaining"/> is the server's
   /// own count, so the display can never drift from it.
@@ -126,6 +134,10 @@ internal class FreeSpinRound
   {
     accumulatedWin += winAmount;
     featureWins += winAmount;
+    if (freeSpinsRemaining > totalSpins - spinsUsed)
+    {
+      totalSpins = spinsUsed + freeSpinsRemaining;
+    }
     spinsUsed = Mathf.Clamp(totalSpins - freeSpinsRemaining, 0, totalSpins);
   }
 }

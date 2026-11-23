@@ -192,7 +192,7 @@ internal class WinPopupController : MonoBehaviour
     var tier = GetBigWinTier();
     if (tier == null)
     {
-      Debug.LogError("[WinPopupController] winTiers is empty — add a 'BigWin' entry.", this);
+      // Debug.LogError("[WinPopupController] winTiers is empty — add a 'BigWin' entry.", this);
       return;
     }
 

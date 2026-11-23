@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -164,6 +164,9 @@ public class BonusManager : MonoBehaviour
         takeRequested = false;
         Totalwinamount = 0;
 
+        AudioManager.Instance?.SetBonusActive(true);
+        AudioManager.Instance?.StopReelSpin(immediate: true);
+
         SetTitlesActive(false);
         UpdateBonusOrientationLayout(IsPortraitMode());
 
@@ -289,7 +292,7 @@ public class BonusManager : MonoBehaviour
         int confirmedIndex = payload.giftIndex;
         isOver = payload.isOver;
         picksMade = payload.picksMade;
-        Totalwinamount = payload.currentWinning;
+        Totalwinamount += payload.prizeWin;
 
         RevealGift(confirmedIndex, payload.prizeWin);
 
@@ -400,13 +403,12 @@ public class BonusManager : MonoBehaviour
         if (hasRevealedRemaining) return;
         hasRevealedRemaining = true;
 
-        AudioManager.Instance?.PlayRemainingGifts();
-
         if (pickGiftText != null) pickGiftText.gameObject.SetActive(false);
 
         int buttonsToShow = giftCount > 0 ? Mathf.Min(giftCount, giftButtons.Length)
                                            : giftButtons.Length;
 
+        bool hasRemaining = false;
         if (giftButtons != null)
         {
             for (int i = 0; i < buttonsToShow; i++)
@@ -414,6 +416,7 @@ public class BonusManager : MonoBehaviour
                 if (giftButtons[i] == null) continue;
                 if (!giftButtons[i].gameObject.activeSelf) continue;
 
+                hasRemaining = true;
                 giftButtons[i].interactable = false;
                 giftButtons[i].gameObject.SetActive(false);
 
@@ -426,11 +429,16 @@ public class BonusManager : MonoBehaviour
             }
         }
 
-        if (remainingText != null)
+        if (hasRemaining)
         {
-            remainingText.transform.localScale = Vector3.zero;
-            remainingText.SetActive(true);
-            remainingText.transform.DOScale(Vector3.one, 1.0f);
+            AudioManager.Instance?.PlayRemainingGifts();
+
+            if (remainingText != null)
+            {
+                remainingText.transform.localScale = Vector3.zero;
+                remainingText.SetActive(true);
+                remainingText.transform.DOScale(Vector3.one, 1.0f);
+            }
         }
 
         StartCoroutine(ShowTotalWinSequence());
@@ -481,6 +489,11 @@ public class BonusManager : MonoBehaviour
 
     private void OnTakeButtonClicked()
     {
+        if ((totalWinScreen == null || !totalWinScreen.activeInHierarchy) && (gameManager == null || !gameManager.isInBonus))
+        {
+            return;
+        }
+
         if (takeRequested) return;
         takeRequested = true;
 
@@ -499,13 +512,17 @@ public class BonusManager : MonoBehaviour
 
         SetTakeButton(false);
         SetStartButton(false);
-        SetTitlesActive(true);
 
         if (totalWinScreenBg != null) totalWinScreenBg.gameObject.SetActive(false);
         if (totalWinScreen != null) totalWinScreen.SetActive(false);
         if (totalWinText != null) totalWinText.gameObject.SetActive(false);
         if (christmasGift != null) christmasGift.SetActive(false);
-        SetSpinButtonInteractable(true);
+
+        if (gameManager == null || !gameManager.isInFreeSpins)
+        {
+            SetTitlesActive(true);
+            SetSpinButtonInteractable(true);
+        }
 
         if (gameManager != null)
             gameManager.OnBonusComplete();

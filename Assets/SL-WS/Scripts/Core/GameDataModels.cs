@@ -352,8 +352,13 @@ public class BonusResultPayload
 [Serializable]
 public class ServerScatter
 {
+  public bool triggered;
+  public int scatterCount;
+  public List<ChristmasGiftPosition> positions;
   public bool freeGamesTriggered;
   public int spinsAwarded;
+  public double basePayout;
+  public double winInCredits;
 }
 
 /// <summary>
@@ -1021,12 +1026,24 @@ public static class InitDataConverter
       spinsRemaining = scatterObj.spinsAwarded;
     }
 
+    var lines = ConvertLineWins((payload?.paylineWins != null && payload.paylineWins.Count > 0)
+        ? payload.paylineWins
+        : payload?.lineWins, gameConfig);
+    if (scatterObj != null && scatterObj.positions != null && scatterObj.positions.Count > 0 && (scatterObj.winInCredits > 0 || scatterObj.basePayout > 0))
+    {
+      int reels = gameConfig != null && gameConfig.reelCount > 0 ? gameConfig.reelCount : 5;
+      var pos = new List<int>();
+      foreach (var p in scatterObj.positions) if (p != null) pos.Add(p.row * reels + p.col);
+      int symId = gameConfig != null && gameConfig.scatterSymbolId > 0 ? gameConfig.scatterSymbolId : 1;
+      lines.Add(new WinLine { lineId = -1, symbolId = symId, positions = pos, winAmount = scatterObj.winInCredits > 0 ? scatterObj.winInCredits : scatterObj.basePayout });
+    }
+
     var result = new SpinResult
     {
       resultMatrix = ConvertReelsToMatrix(serverResponse.payload?.matrix, serverResponse.matrix, gameConfig),
       winAmount = winAmountVal,
       grandTotalWin = winAmountVal,
-      winLines = ConvertLineWins(payload?.paylineWins ?? payload?.lineWins, gameConfig),
+      winLines = lines,
 
       // Carried verbatim — positions are [row, col] and index the SAME grid as resultMatrix,
       // which already contains the revealed symbol at each of them.
@@ -1117,6 +1134,9 @@ public static class InitDataConverter
                       positions.Add(flatIndex);
               }
           }
+
+          if (serverWin.matchCount > 0 && positions.Count > serverWin.matchCount)
+              positions = positions.GetRange(0, serverWin.matchCount);
 
           if (positions.Count == 0)
               continue;

@@ -643,6 +643,7 @@ public class SlotView : MonoBehaviour
     // reel has moved. The intro pass carries the old result off-screen first, and each
     // column shuffles its whole strip at the handover point instead (see StartColumn).
     isSpinning = true;
+    AudioManager.Instance?.SetBonusActive(gameManager != null && gameManager.isInBonus);
     AudioManager.Instance?.StartReelSpin();
 
     int count = reelTransforms != null ? reelTransforms.Length : 0;
@@ -727,7 +728,7 @@ public class SlotView : MonoBehaviour
 
     for (int col = 0; col < count; col++)
     {
-      if (!immediate && anticipationActive)
+      if (!immediate && anticipationActive && (gameManager == null || !gameManager.isInBonus))
       {
         SetGoldenEffect(col, true);
         AudioManager.Instance?.StartAnticipationSpin();
@@ -735,17 +736,20 @@ public class SlotView : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-          if (gameManager != null && gameManager.IsStopRequested)
+          if (gameManager != null && (gameManager.IsStopRequested || gameManager.isInBonus))
           {
-            immediate = true;
+            if (gameManager.IsStopRequested) immediate = true;
             StopAllGoldenEffects();
-            AudioManager.Instance?.StopReelSpin();
+            AudioManager.Instance?.StopReelSpin(immediate: true);
             break;
           }
           elapsed += Time.unscaledDeltaTime;
           yield return null;
         }
         SetGoldenEffect(col, false);
+
+        if (col == count - 1)
+          AudioManager.Instance?.StopAnticipationSpin(immediate: true);
       }
 
       bool wasAnticipating = anticipationActive;
@@ -758,11 +762,11 @@ public class SlotView : MonoBehaviour
         AudioManager.Instance?.PlayBonusInReel();
       }
 
-      landedScatters += CountScattersInColumn(col);
-      landedBonusSymbols += CountBonusInColumn(col);
+      landedScatters += scattersInCol;
+      landedBonusSymbols += bonusInCol;
 
       // Trigger golden anticipation effect one by one
-      if (!anticipationActive && !immediate)
+      if (!anticipationActive && !immediate && col >= 1)
       {
         if (landedScatters >= minScattersForAnticipation || landedBonusSymbols >= 2)
         {
@@ -783,10 +787,7 @@ public class SlotView : MonoBehaviour
     }
 
     StopAllGoldenEffects();
-
-    // Every column is now on its way down, so nothing is visibly spinning any more. Fading out
-    // after the settle tween would leave the loop running under the last reel's overshoot.
-    AudioManager.Instance?.StopReelSpin();
+    AudioManager.Instance?.StopReelSpin(immediate: anticipationActive);
 
     // Wait on the last column's settle tween. Guarded because Kill() can null it out.
     Tween last = reelTweens.Length > 0 ? reelTweens[reelTweens.Length - 1] : null;
@@ -794,6 +795,9 @@ public class SlotView : MonoBehaviour
 
     KillAllTweens();
     isSpinning = false;
+
+    StopAllGoldenEffects();
+    AudioManager.Instance?.StopReelSpin(immediate: true);
 
     // Gate onComplete behind the landing beats. GameManager yields on this whole coroutine,
     // so the balance update, the return to Idle and the win presentation all wait for the
@@ -949,6 +953,7 @@ public class SlotView : MonoBehaviour
 
   private void StopAllGoldenEffects()
   {
+    AudioManager.Instance?.StopAnticipationSpin(immediate: true);
     if (goldenReelEffects == null) return;
     for (int i = 0; i < goldenReelEffects.Length; i++)
       SetGoldenEffect(i, false);
@@ -1026,7 +1031,10 @@ public class SlotView : MonoBehaviour
     //   winPopup.Show(winAmount, totalPay, null);
     // else
     if (winAmount > 0 && !HasScatterWin && !HasBonusWin)
+    {
       AudioManager.Instance?.PlayNormalWin();
+      yield return new WaitForSeconds(1.5f);
+    }
     else if (winPopup == null && !warnedNoWinPopup)
     {
       warnedNoWinPopup = true;
@@ -1044,14 +1052,33 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     if (winPresentationDelay > 0f)
       yield return new WaitForSeconds(winPresentationDelay);
 
-  
+    if (HasScatterWin || HasBonusWin)
+    {
+      LowerAllWinCells();
+      ReleaseWinOverlay();
+      winAnimationCoroutine = null;
+      onComplete?.Invoke();
+      yield break;
+    }
 
     // 1. Collect all winning positions for the idle Spine animation loop
     var allWinPositions = new HashSet<int>();
-    foreach (var winLine in winLines)
+    if (winLines != null)
     {
-      if (winLine.positions == null) continue;
-      foreach (int flatIndex in winLine.positions) allWinPositions.Add(flatIndex);
+      foreach (var winLine in winLines)
+      {
+        if (winLine == null || winLine.positions == null) continue;
+        foreach (int flatIndex in winLine.positions) allWinPositions.Add(flatIndex);
+      }
+    }
+
+    if (allWinPositions.Count == 0)
+    {
+      LowerAllWinCells();
+      ReleaseWinOverlay();
+      winAnimationCoroutine = null;
+      onComplete?.Invoke();
+      yield break;
     }
 
     // Raise the darkening panel once, for the whole presentation. See winOverlayHeld.
@@ -1075,13 +1102,35 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     //     yield return null;
     // }
     // else
-    if (totalWinAmount > 0 && !HasScatterWin && !HasBonusWin)
+    if (totalWinAmount > 0)
     {
       AudioManager.Instance?.PlayNormalWin();
     }
 
-    if (HasScatterWin || HasBonusWin)
+    bool isTurbo = gameManager != null && gameManager.currentSpinSpeed != SpinSpeed.Normal;
+    if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins || isTurbo || HasScatterWin || HasBonusWin))
     {
+      var wins = ResolveWinCells(allWinPositions);
+      if (wins.Count > 0 && !showPopup)
+      {
+        ShowTotalPayoutText(totalWinAmount);
+        ShowWinCells(wins);
+        SetSquareWinActive(allWinPositions);
+        if (isTurbo)
+        {
+          StartCoroutine(PlayWinPass(wins, loopSpine: true));
+          yield return new WaitForSeconds(1.5f);
+        }
+        else
+        {
+          yield return PlayWinPass(wins);
+        }
+      }
+      else if (totalWinAmount > 0 && !HasScatterWin && !HasBonusWin)
+      {
+        yield return new WaitForSeconds(1.5f);
+      }
+
       LowerAllWinCells();
       ReleaseWinOverlay();
       winAnimationCoroutine = null;
@@ -1089,16 +1138,8 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
       yield break;
     }
 
-    // Autoplay and free spins never see the per-line breakdown, the next spin follows.
-    if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins))
+    if (HasScatterWin || HasBonusWin)
     {
-      if (allWinPositions.Count > 0 && !showPopup)
-      {
-        ShowTotalPayoutText(totalWinAmount);
-        StartCoroutine(ShowAndPlayWin(allWinPositions));
-        yield return new WaitForSeconds(1.5f);
-      }
-
       LowerAllWinCells();
       ReleaseWinOverlay();
       winAnimationCoroutine = null;
@@ -1434,27 +1475,51 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     SetWinOverlayActive(true);
     EnforceWinLayerOrder();
   }
-  internal IEnumerator PlayScatterTriggerAnimation() => PlayTriggerAnimation(GetScatterSymbolId());
-  internal IEnumerator PlayBonusTriggerAnimation() => PlayTriggerAnimation(GetBonusSymbolId(), 2.0f);
+  internal IEnumerator PlayScatterTriggerAnimation(float duration = 2.0f) => PlayTriggerAnimation(GetScatterSymbolId(), duration);
+  internal IEnumerator PlayBonusTriggerAnimation(float duration = 2.0f) => PlayTriggerAnimation(GetBonusSymbolId(), duration);
 
   internal IEnumerator PlayTriggerAnimation(int symbolId, float duration = 0f)
   {
     var wins = new List<(SlotSymbolView cell, int symbolId)>();
+    var triggerPositions = new List<int>();
+    int reels = ReelCount;
     if (resultCells != null)
     {
-      foreach (var col in resultCells)
-        foreach (var cell in col.cells)
+      for (int col = 0; col < resultCells.Count; col++)
+      {
+        var column = resultCells[col];
+        if (column?.cells == null) continue;
+        for (int row = 0; row < column.cells.Count; row++)
+        {
+          var cell = column.cells[row];
           if (cell != null && cell.SymbolId == symbolId)
+          {
             wins.Add((cell, symbolId));
+            triggerPositions.Add(row * reels + col);
+          }
+        }
+      }
+    }
+
+    if (symbolId == GetBonusSymbolId())
+    {
+      AudioManager.Instance?.SetBonusActive(true);
+      AudioManager.Instance?.StopReelSpin(immediate: true);
+    }
+    else
+    {
+      AudioManager.Instance?.StopAnticipationSpin(immediate: true);
     }
 
     if (wins.Count == 0) yield break;
 
     HoldOverlayForFeature();
     ShowWinCells(wins);
+    SetSquareWinActive(triggerPositions);
     AudioManager.Instance?.StopWin();
     if (symbolId == GetBonusSymbolId())
     {
+      AudioManager.Instance?.StopReelSpin(immediate: true);
       AudioManager.Instance?.PlayBonusGameTriggered();
     }
     else
@@ -1466,11 +1531,13 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
       StartCoroutine(PlayWinPass(wins, loopSpine: true));
       yield return new WaitForSeconds(duration);
       LowerAllWinCells();
-      ReleaseWinOverlay();
+      ReleaseFeatureOverlay();
     }
     else
     {
       yield return PlayWinPass(wins, loopSpine: true);
+      LowerAllWinCells();
+      ReleaseFeatureOverlay();
     }
   }
 
@@ -1532,16 +1599,19 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
 
   private void SetWinOverlayActive(bool active)
   {
+    if (winDarkenOverlay != null && winDarkenOverlay.activeSelf) winDarkenOverlay.SetActive(false);
+      return;
+
     // While the reels are spinning, the black overlay must always remain disabled.
-    if (active && isSpinning) return;
+    // if (active && isSpinning) return;
 
     // EITHER hold blocks a hide, and the feature hold is the stronger of the two. A free-spin
     // intro deliberately starts a spin while its popups are still up, and that spin's
     // StartSpin -> KillWinTweens -> ReleaseWinOverlay would otherwise take the panel down out
     // from under them. Only FadeOutOverlay clears the feature hold.
-    if (!active && (winOverlayHeld || featureOverlayHeld)) return;
-    if (winDarkenOverlay != null && winDarkenOverlay.activeSelf != active)
-      winDarkenOverlay.SetActive(active);
+    // if (!active && (winOverlayHeld || featureOverlayHeld)) return;
+    // if (winDarkenOverlay != null && winDarkenOverlay.activeSelf != active)
+      // winDarkenOverlay.SetActive(active);
   }
 
   #endregion

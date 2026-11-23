@@ -1,4 +1,4 @@
-﻿﻿﻿using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -50,6 +50,8 @@ public class GameManager : MonoBehaviour
   /// presentation must play AFTER the coin flights and the win lines, not instead of them.
   /// </summary>
   private FreeSpinRound pendingRound;
+  internal bool pendingFreeSpinRetrigger;
+  private bool isEndingFreeSpins;
 
   internal bool isInitialized;
   internal bool initializationFailed;
@@ -214,6 +216,7 @@ public class GameManager : MonoBehaviour
     lastResult = null;
     currentState = GameState.Spinning;
     stopRequested = false;
+    pendingFreeSpinRetrigger = false;
 
     // Deduct total pay from balance on spin start (except in free spins)
     if (!isInFreeSpins)
@@ -304,7 +307,8 @@ public class GameManager : MonoBehaviour
 
   private void LatchFreeSpinTrigger()
   {
-    if (isInFreeSpins || pendingRound != null || lastResult == null) return;
+    if (lastResult == null) return;
+    if (!isInFreeSpins && pendingRound != null) return;
 
     int spins = 0;
     if (lastResult.scatter != null && lastResult.scatter.freeGamesTriggered)
@@ -315,17 +319,32 @@ public class GameManager : MonoBehaviour
     {
       int scatterCount = CountScatterSymbols(lastResult.resultMatrix);
       if (scatterCount >= 3)
-        spins = (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.spinsAwarded > 0)
+        spins = (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.retriggerSpins > 0)
+            ? gameConfig.features.freeGames.retriggerSpins
+            : (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.spinsAwarded > 0)
             ? gameConfig.features.freeGames.spinsAwarded : 10;
-      else if (lastResult.serverSpinsRemaining > 0)
+      else if (lastResult.serverSpinsRemaining > 0 && !isInFreeSpins)
         spins = lastResult.serverSpinsRemaining;
     }
 
     if (spins > 0)
     {
-      int mult = (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.winMultiplier > 0)
-          ? gameConfig.features.freeGames.winMultiplier : 3;
-      pendingRound = FreeSpinRound.FromTrigger(spins, lastResult.winAmount, mult);
+      if (isInFreeSpins)
+      {
+        if (currentRound != null)
+        {
+          pendingFreeSpinRetrigger = true;
+          currentRound.AddSpins(spins);
+          freeSpinsRemaining = lastResult.serverSpinsRemaining > 0 ? lastResult.serverSpinsRemaining : (freeSpinsRemaining + spins);
+          uiManager.UpdateFreeSpinCount(freeSpinsRemaining, currentRound.totalSpins);
+        }
+      }
+      else
+      {
+        int mult = (gameConfig?.features?.freeGames != null && gameConfig.features.freeGames.winMultiplier > 0)
+            ? gameConfig.features.freeGames.winMultiplier : 3;
+        pendingRound = FreeSpinRound.FromTrigger(spins, lastResult.winAmount, mult);
+      }
     }
   }
 
@@ -349,7 +368,7 @@ public class GameManager : MonoBehaviour
     if (isInFreeSpins && currentRound != null && lastResult != null)
     {
       currentRound.RecordSpin(lastResult.winAmount, lastResult.serverSpinsRemaining);
-      uiManager.UpdateFreeSpinCount(currentRound.spinsUsed);
+      uiManager.UpdateFreeSpinCount(lastResult.serverSpinsRemaining, currentRound.totalSpins);
     }
 
     // The HUD updates straight away and the state returns to Idle; the win presentation
@@ -389,7 +408,6 @@ public class GameManager : MonoBehaviour
     }
     else
     {
-      slotView?.ShowNoWinOverlay();
       OnWinAnimationComplete();
     }
   }
@@ -431,6 +449,16 @@ public class GameManager : MonoBehaviour
       yield break;
     }
 
+    if (isInFreeSpins && pendingFreeSpinRetrigger)
+    {
+      pendingFreeSpinRetrigger = false;
+      if (slotView != null)
+      {
+        float duration = (currentSpinSpeed != SpinSpeed.Normal) ? 1.5f : 2.0f;
+        yield return slotView.PlayScatterTriggerAnimation(duration);
+      }
+    }
+
     if (IsBonusPending())
     {
       if (isAutoPlaying) StopAutoPlay();
@@ -446,7 +474,8 @@ public class GameManager : MonoBehaviour
 
       if (slotView != null)
       {
-        yield return slotView.PlayBonusTriggerAnimation();
+        float duration = (currentSpinSpeed != SpinSpeed.Normal) ? 1.5f : 2.0f;
+        yield return slotView.PlayBonusTriggerAnimation(duration);
       }
 
       TriggerBonus();
@@ -507,7 +536,7 @@ public class GameManager : MonoBehaviour
     if (isInFreeSpins && result.serverSpinsRemaining >= 0)
     {
       freeSpinsRemaining = result.serverSpinsRemaining;
-      freeSpinsUsed = currentRound != null ? currentRound.totalSpins - freeSpinsRemaining : 0;
+      freeSpinsUsed = currentRound != null ? Mathf.Max(0, currentRound.totalSpins - freeSpinsRemaining) : 0;
     }
 
     if (result.giftsBonusActive && result.christmasGifts != null && result.christmasGifts.triggered)
@@ -673,6 +702,7 @@ public class GameManager : MonoBehaviour
     slotView?.ClearStickyWilds();
 
     isInFreeSpins = true;
+    isEndingFreeSpins = false;
     freeSpinsRemaining = round.totalSpins;
     freeSpinsUsed = 0;
     waitingForFreeSpinStart = true;
@@ -726,6 +756,8 @@ public class GameManager : MonoBehaviour
 
   private void EndFreeSpins()
   {
+    if (isEndingFreeSpins) return;
+    isEndingFreeSpins = true;
     StartCoroutine(EndFreeSpinsRoutine());
   }
 
@@ -737,7 +769,7 @@ public class GameManager : MonoBehaviour
   private IEnumerator EndFreeSpinsRoutine()
   {
     if (currentRound != null && uiManager != null)
-      uiManager.UpdateFreeSpinCount(currentRound.totalSpins);
+      uiManager.UpdateFreeSpinCount(0, currentRound.totalSpins);
 
     if (freeSpinPresenter != null && currentRound != null)
     {
@@ -757,6 +789,7 @@ public class GameManager : MonoBehaviour
     uiManager.OnFreeSpinsEnded(totalRoundWin, totalSpinsUsed);
 
     currentState = GameState.Idle;
+    isEndingFreeSpins = false;
   }
 
   #endregion
@@ -841,6 +874,7 @@ public class GameManager : MonoBehaviour
   {
     if (isAutoPlaying) StopAutoPlay();
     isInBonus = true;
+    AudioManager.Instance?.SetBonusActive(true);
     int picks = pendingBonusPickCount;
     int gifts = pendingBonusGiftCount;
     pendingBonusPickCount = 0;
@@ -857,9 +891,38 @@ public class GameManager : MonoBehaviour
 
   internal void OnBonusComplete()
   {
+    if (!isInBonus) return;
+
     isInBonus = false;
+    AudioManager.Instance?.SetBonusActive(false);
     currentState = GameState.Idle;
-    uiManager.EnableControlsAfterWinAnimation();
+
+    if (isInFreeSpins)
+    {
+      if (currentRound != null && bonusManager != null)
+      {
+        currentRound.accumulatedWin += bonusManager.Totalwinamount;
+        currentRound.featureWins += bonusManager.Totalwinamount;
+        if (uiManager != null) uiManager.UpdateWinDisplay(currentRound.accumulatedWin);
+      }
+
+      if (freeSpinsRemaining <= 0)
+      {
+        EndFreeSpins();
+      }
+      else
+      {
+        StartCoroutine(DelayBeforeNextFreeSpin());
+      }
+    }
+    else
+    {
+      if (bonusManager != null && bonusManager.Totalwinamount > 0 && uiManager != null)
+      {
+        uiManager.UpdateWinDisplay(bonusManager.Totalwinamount);
+      }
+      uiManager.EnableControlsAfterWinAnimation();
+    }
   }
 
   #endregion

@@ -299,7 +299,10 @@ internal class FreeSpinPresenter : MonoBehaviour
     SetTitlesActive(false);
 
     if (slotView != null)
-      yield return StartCoroutine(slotView.PlayScatterTriggerAnimation());
+    {
+      float duration = (gameManager != null && gameManager.currentSpinSpeed != SpinSpeed.Normal) ? 1.5f : 2.0f;
+      yield return StartCoroutine(slotView.PlayScatterTriggerAnimation(duration));
+    }
 
 
     // yield return StartCoroutine(ShowTriggeredPopup(round));
@@ -407,7 +410,7 @@ internal class FreeSpinPresenter : MonoBehaviour
     {
       dismissRequested = true;
       AudioManager.Instance?.PlayButton();
-      AudioManager.Instance?.PlayFreeSpinRewarded();
+      // AudioManager.Instance?.PlayFreeSpinRewarded();
     }
     if (congratsPopup != null && congratsPopup.activeInHierarchy)
     {

@@ -70,6 +70,15 @@ public class AudioManager : MonoBehaviour
     private float _musicVolume = 0.5f;
     private float _sfxVolume   = 1.0f;
 
+    private bool isBonusActive;
+    private bool isAnticipationPlaying;
+
+    internal void SetBonusActive(bool active)
+    {
+        isBonusActive = active;
+        if (active) StopReelSpin(immediate: true);
+    }
+
     internal bool MusicEnabled => _musicEnabled;
     internal bool SfxEnabled   => _sfxEnabled;
     internal float MusicVolume => _musicVolume;
@@ -207,7 +216,16 @@ public class AudioManager : MonoBehaviour
 
     private void FadeOutAndStop(AudioSource source, float duration)
     {
-        if (source == null || !source.isPlaying) return;
+        if (source == null) return;
+        source.loop = false;
+        if (!source.isPlaying)
+        {
+            DOTween.Kill(source);
+            fadingOut.Remove(source);
+            source.Stop();
+            source.volume = 0f;
+            return;
+        }
         FadeVolume(source, 0f, duration).OnComplete(() =>
         {
             fadingOut.Remove(source);
@@ -223,11 +241,16 @@ public class AudioManager : MonoBehaviour
     private void CrossfadeTo(AudioClip clip)
     {
         if (clip == null || musicA == null) return;
-        if (activeMusic.isPlaying && activeMusic.clip == clip) return;
+        if (activeMusic.isPlaying && activeMusic.clip == clip)
+        {
+            activeMusic.loop = true;
+            return;
+        }
 
         AudioSource outgoing = activeMusic;
         AudioSource incoming = activeMusic == musicA ? musicB : musicA;
 
+        incoming.loop = true;
         FadeOutAndStop(outgoing, musicCrossfadeDuration);
         FadeIn(incoming, clip, MusicTargetVolume, musicCrossfadeDuration);
         activeMusic = incoming;
@@ -326,6 +349,7 @@ public class AudioManager : MonoBehaviour
     {
         if (reelSpinSource == null || clipReelSpinning == null || !_sfxEnabled) return;
 
+        isAnticipationPlaying = false;
         reelSpinSource.loop = false;
 
         // Still playing but mid fade-out from the last stop: bring it back up instead of restarting.
@@ -340,16 +364,38 @@ public class AudioManager : MonoBehaviour
 
     internal void StartAnticipationSpin()
     {
-        if (reelSpinSource == null || !_sfxEnabled) return;
-        reelSpinSource.loop = true;
+        if (isBonusActive || reelSpinSource == null || !_sfxEnabled) return;
         AudioClip clip = clipReelAnticipation != null ? clipReelAnticipation : clipReelSpinning;
         if (clip == null) return;
 
+        isAnticipationPlaying = true;
         reelSpinSource.Stop();
+        reelSpinSource.loop = true;
         FadeIn(reelSpinSource, clip, SfxTargetVolume, sfxFadeInDuration);
     }
 
-    internal void StopReelSpin() => FadeOutAndStop(reelSpinSource, reelSpinFadeOutDuration);
+    internal void StopAnticipationSpin(bool immediate = true)
+    {
+        if (!isAnticipationPlaying) return;
+        StopReelSpin(immediate);
+    }
+
+    internal void StopReelSpin(bool immediate = false)
+    {
+        if (reelSpinSource == null) return;
+        isAnticipationPlaying = false;
+        reelSpinSource.loop = false;
+        if (immediate)
+        {
+            DOTween.Kill(reelSpinSource);
+            fadingOut.Remove(reelSpinSource);
+            reelSpinSource.Stop();
+            reelSpinSource.clip = null;
+            reelSpinSource.volume = 0f;
+            return;
+        }
+        FadeOutAndStop(reelSpinSource, reelSpinFadeOutDuration);
+    }
 
     #endregion
 
