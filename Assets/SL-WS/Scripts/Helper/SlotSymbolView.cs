@@ -44,30 +44,6 @@ public class SlotSymbolView : MonoBehaviour
            "Assets/Fonts/CustomTextFonts — a plain TMP font shows the literal <sprite=N> tags.")]
   [SerializeField] internal TMPro.TMP_Text winLineText;
 
-  [Header("Mystery locker")]
-  [Tooltip("Image of the locker that covers this cell during a Mystery reveal. Lives on its " +
-           "own child, rendered ABOVE both Icon and Spine, and is independent of the " +
-           "sprite/Spine display mode. Optional.")]
-  [SerializeField] internal Image lockerImage;
-
-  [Tooltip("ImageAnimation driving lockerImage — expected on the SAME GameObject as it, with " +
-           "its rendererDelegate pointing at it and StartOnAwake / StartonEnable both OFF.")]
-  [SerializeField] internal ImageAnimation lockerAnimation;
-
-  [Header("Coin overlay")]
-  [Tooltip("The coin stamped on this cell by a coinOverlays entry. Its child sits BETWEEN " +
-           "Icon/Spine and Locker in sibling order, so a coin on a Mystery cell stays hidden " +
-           "until the locker opens. Inactive in the prefab. Optional.")]
-  [SerializeField] internal RectTransform coinOverlay;
-
-  [Tooltip("Image on the coinOverlay child. Its sprite is driven by coinAnimation.")]
-  [SerializeField] internal Image coinImage;
-
-  [Tooltip("ImageAnimation driving coinImage — expected on the SAME GameObject as it, with " +
-           "its rendererDelegate pointing at it and StartOnAwake / StartonEnable both OFF. " +
-           "The frames come from PigMeterController per coin type, so leave textureArray " +
-           "empty in the prefab.")]
-  [SerializeField] internal ImageAnimation coinAnimation;
 
   /// <summary>Symbol id currently displayed, or -1 before the first SetSymbol.</summary>
   internal int SymbolId { get; private set; } = -1;
@@ -102,20 +78,6 @@ public class SlotSymbolView : MonoBehaviour
     var txt = transform.Find("WinLineText");
     if (txt != null) winLineText = txt.GetComponent<TMPro.TMP_Text>();
 
-    var locker = transform.Find("Locker");
-    if (locker != null)
-    {
-      lockerImage = locker.GetComponent<Image>();
-      lockerAnimation = locker.GetComponent<ImageAnimation>();
-    }
-
-    var coin = transform.Find("Coin");
-    if (coin != null)
-    {
-      coinOverlay = coin as RectTransform;
-      coinImage = coin.GetComponent<Image>();
-      coinAnimation = coin.GetComponent<ImageAnimation>();
-    }
   }
 
 #if UNITY_EDITOR
@@ -130,8 +92,6 @@ public class SlotSymbolView : MonoBehaviour
     if (imageAnimation == null && iconImage != null)
       imageAnimation = iconImage.GetComponent<ImageAnimation>();
 
-    if (lockerAnimation == null && lockerImage != null)
-      lockerAnimation = lockerImage.GetComponent<ImageAnimation>();
 
     // Frozen is the default state for the whole life of the cell — a resting symbol must
     // not tick, or its rigged bones drift as the column tweens. Only StartStagedAnimation

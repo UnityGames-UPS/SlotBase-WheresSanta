@@ -24,7 +24,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip clipMaxBet;
     [SerializeField] private AudioClip clipNormalWin;
     [SerializeField] private AudioClip clipBigWins;
-    [SerializeField] private AudioClip clipCongratulations;
+    // [SerializeField] private AudioClip clipCongratulations;
     [SerializeField] private AudioClip clipFreeSpinRewarded;
     [SerializeField] private AudioClip clipReelSpinning;
     [SerializeField] private AudioClip clipReelAnticipation;
@@ -317,8 +317,6 @@ public class AudioManager : MonoBehaviour
     internal void PlayMaxBet()         => PlaySfx(clipMaxBet);
     internal void PlayMaxBetReached()  => PlayMaxBet();
 
-    internal void PlayCongratulations()           => PlaySfx(clipCongratulations);
-    internal void PlayFreeSpinRewarded()          => PlaySfx(clipFreeSpinRewarded);
     internal void PlayReelStop()                  => PlaySfx(clipReelStop, reelStopFadeInDuration, reelStopStartOffset);
 
     /// <summary>NormalWin for the lowest tier, BigWins for every tier above it.</summary>
@@ -334,7 +332,6 @@ public class AudioManager : MonoBehaviour
     }
 
     internal void PlayNormalWin() => PlayWin(bigWin: false);
-    internal void PlayBigWin()    => PlayWin(bigWin: true);
 
     internal void StopWin() => FadeOutAndStop(winSource, sfxFadeOutDuration);
 

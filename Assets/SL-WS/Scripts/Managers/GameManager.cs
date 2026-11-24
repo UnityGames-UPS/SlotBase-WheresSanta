@@ -261,15 +261,6 @@ public class GameManager : MonoBehaviour
     {
       slotView.PopulateResultMatrix(lastResult.resultMatrix);
 
-      // Coins are stamped in the same beat. Their child sits BELOW the locker, so a coin on
-      // a Mystery cell stays hidden until that locker opens; a coin on a plain cell is
-      // simply visible when the column parks. The meters are passed alongside because the
-      // client works out which coin moved which meter by diffing them.
-      //
-      // The round-ending free spin already carries the reset meters. Those are held on the
-      // round and applied when the congratulations popup opens, not at reel stop.
-      bool endsRound = isInFreeSpins && currentRound != null &&
-                       (lastResult.isRoundOver || lastResult.serverSpinsRemaining <= 0);
       LatchFreeSpinTrigger();
     }    
 
@@ -390,12 +381,6 @@ public class GameManager : MonoBehaviour
       uiManager.DisableControlsDuringWinAnimation();
 
     currentState = GameState.Idle;
-
-    // The coin flights have already landed by now — SlotView runs them inside StopSpin, before
-    // this fires — so this is the moment the brief calls for: the triggering pigs light up and
-    // the others darken, and the win presentation then plays on top of that.
-    // if (pendingRound != null && pigMeters != null)
-    //   pigMeters.EnterTriggerState(pendingRound.contributors);
 
     if (lastResult != null && lastResult.winLines != null && lastResult.winLines.Count > 0)
     {

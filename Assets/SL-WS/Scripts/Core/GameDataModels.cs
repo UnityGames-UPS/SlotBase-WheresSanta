@@ -55,50 +55,26 @@ public class ServerGameData
   public List<List<int>> lines;
   public List<double> bets;
 
-  /// <summary>
-  /// Lines per spin — total stake is bet x this. Rich Piggies init does NOT send it, so the
-  /// default stands and matches the 25 fixed paylines.
-  /// </summary>
-  // public double creditDivisor = 25;
   public double creditDivisor = 0;
 
   public int totalLines;
 }
 
 /// <summary>
-/// Rich Piggies init "features" block. Note this is a mix of static feature configuration
-/// (the pig blocks) and live per-player state (activeFeature / freeSpinsRemaining / meters).
+/// wheres Santa init "features" block.
 /// </summary>
 [Serializable]
 public class ServerFeatures
 {
-  // [NEW - Treasure Cats Feature Models from DataModel]
   public Scatter scatter;
   public FreeGames freeGames;
-  public TreasureHunt treasureHunt;
   public WildSubstitution wildSubstitution;
   public ChristmasGiftsBonus christmasGiftsBonus;
 
-  // [LEGACY - Retained for PigMeterController compatibility]
-  public MysteryRevealFeature mysteryReveal;
-  public BluePigFeature bluePig;
-  public YellowPigFeature yellowPig;
-  public RedPigFeature redPig;
 
   /// <summary>Minimum symbols on adjacent reels from the leftmost reel for a line to pay.</summary>
   public int minMatchCount;
 
-  // Live state — carried so nothing is lost; nothing reads these yet.
-
-  /// <summary>
-  /// Features currently running for this player. Init sends an array (empty when idle);
-  /// the spin payload sends a single string, so the converter accepts both.
-  /// </summary>
-  [JsonConverter(typeof(StringOrArrayConverter))]
-  public List<string> activeFeature;
-
-  public int freeSpinsRemaining;
-  public ServerMeters meters;
 }
 
 /// <summary>
@@ -128,55 +104,6 @@ public class StringOrArrayConverter : JsonConverter
   {
     serializer.Serialize(writer, value);
   }
-}
-
-[Serializable]
-public class MysteryRevealFeature
-{
-  public bool enabled;
-}
-
-[Serializable]
-public class BluePigFeature
-{
-  public int defaultMeter;
-  public int maxMeter;
-}
-
-[Serializable]
-public class YellowPigFeature
-{
-  public int freeSpinsCount;
-  /// <summary>Spaces each jackpot meter must fill before it awards, keyed by tier name.</summary>
-  public Dictionary<string, int> jackpotLevels;
-  public Dictionary<string, double> defaultJackpotMultipliers;
-}
-
-[Serializable]
-public class RedPigFeature
-{
-  public int defaultWilds;
-  public int maxMeter;
-  public int freeSpinsCount;
-  public List<int> wildCountBuckets;
-}
-
-/// <summary>The three persistent meters. Blue = free spins, red = wilds, yellow = jackpots.</summary>
-[Serializable]
-public class ServerMeters
-{
-  public int blue;
-  public int red;
-  public Dictionary<string, double> yellow;
-}
-
-[Serializable]
-public class ExtraSpinsData
-{
-  [JsonProperty("2")] public int _2; // Keep for safety/compatibility with UI
-  [JsonProperty("3")] public int _3;
-  [JsonProperty("4")] public int _4;
-  [JsonProperty("5")] public int _5;
 }
 
 [Serializable]
@@ -253,34 +180,8 @@ public class ServerPayload
   public double featureWin;
   public bool isFreeSpin;
 
-  /// <summary>Mystery tiles that opened this spin, as [row, col].</summary>
-  public List<ServerMysteryReveal> mysteryReveals;
-
-  /// <summary>Coins stamped on top of a landed cell. Drives the coin flight beat.</summary>
-  public List<ServerCoinOverlay> coinOverlays;
-
-  /// <summary>Populated only when a jackpot tier's meter filled and paid out.</summary>
-  public List<ServerJackpotWin> jackpotWin;
-
-  /// <summary>e.g. ["bluePig"] on a trigger spin, ["jackpot_Grand"] on a jackpot award.</summary>
-  public List<string> triggeredFeatures;
-
-  /// <summary>
-  /// Features running while a free-spin round is live — "blue" / "yellow" / "red";
-  /// empty or null in the base game. Same shape as the init block's field.
-  /// </summary>
-  [JsonConverter(typeof(StringOrArrayConverter))]
-  public List<string> activeFeature;
   public int freeSpinsRemaining;
 
-  /// <summary>
-  /// Coins collected per jackpot tier during Yellow free spins, against the tier's space
-  /// count. Present only while activeFeature is "yellow". Parsed; not rendered yet.
-  /// </summary>
-  public Dictionary<string, int> yellowFSCollections;
-
-  /// <summary>Meter values AFTER this spin. The client diffs these to attribute coins.</summary>
-  public ServerMeters meters;
   public ServerScatter scatter;
 }
 
@@ -361,61 +262,6 @@ public class ServerScatter
   public double winInCredits;
 }
 
-/// <summary>
-/// A coin stamped on a landed cell. Per BackendResponses.md section 4 these may arrive
-/// with or without a matching entry in <see cref="ServerPayload.mysteryReveals"/> — a coin
-/// on a Mystery cell stays hidden until that locker opens, one on a plain cell is visible
-/// as soon as the column parks.
-/// </summary>
-[Serializable]
-public class ServerCoinOverlay
-{
-  /// <summary>[row, col] of the cell the coin sits on.</summary>
-  public List<int> position;
-
-  /// <summary>"BlueCoin" / "YellowCoin" / "RedCoin".</summary>
-  public string coin;
-
-  /// <summary>Symbol id, 12-14. Authoritative; <see cref="coin"/> is the readable form.</summary>
-  public int coinId;
-
-  /// <summary>
-  /// What this coin DID: "added_to_meter" fed its meter, "triggered" fed the Free Spins
-  /// trigger instead. The distinction cannot be recovered from the meter diff — a triggering
-  /// coin moves no meter and looks identical to one the server rolled no award for — so
-  /// without this field the client has to fall back to guessing (see CoinPlanBuilder).
-  /// </summary>
-  public string action;
-
-  /// <summary>
-  /// Blue / Red only: the meter's ABSOLUTE value once this coin has landed. Note the
-  /// asymmetry with <see cref="jackpotMultiplierAdded"/>, which is a delta.
-  /// </summary>
-  public int? meterValueAfter;
-
-  /// <summary>
-  /// Yellow only: which jackpot tier this coin fed — "Mega", "Grand", "Major", "Maxi",
-  /// "Minor" or "Mini". CASE-SENSITIVE; it keys straight into the meters dictionary.
-  /// </summary>
-  public string addedToJackpot;
-
-  /// <summary>
-  /// Yellow only: how much was added to <see cref="addedToJackpot"/>. A DELTA, not the value
-  /// after — the client accumulates it onto the tier's current multiplier.
-  /// </summary>
-  public double? jackpotMultiplierAdded;
-}
-
-[Serializable]
-public class ServerJackpotWin
-{
-  public int symbolId;
-  public string symbolName;
-  public double winAmount;
-
-  /// <summary>[row, col] of the cell that completed the tier.</summary>
-  public List<int> position;
-}
 
 /// <summary>
 /// One winning payline. <see cref="lineIndex"/> is a REAL index into
@@ -450,14 +296,6 @@ public class ServerLineWin
   public object matchedPositions;
 }
 
-[Serializable]
-public class ServerMysteryReveal
-{
-  /// <summary>[row, col] of the Mystery tile that was revealed.</summary>
-  public List<int> position;
-  public int revealedSymbolId;
-  public string revealedSymbolName;
-}
 
 // ============================================================================
 // Client-Side Spin Request
@@ -492,16 +330,6 @@ public class GameConfig
   public int reelCount = 5;
   public int rowCount = 3;
 
-  // public int symbolCount = RichPiggiesSymbols.TotalSymbolCount;
-  // public int wildSymbolId = RichPiggiesSymbols.Wild;
-  // public int mysterySymbolId = RichPiggiesSymbols.Mystery;
-  // public int blueCoinSymbolId = RichPiggiesSymbols.BlueCoin;
-  // public int yellowCoinSymbolId = RichPiggiesSymbols.YellowCoin;
-  // public int redCoinSymbolId = RichPiggiesSymbols.RedCoin;
-  // public int mysterySymbolId = -1;
-  // public int blueCoinSymbolId = -1;
-  // public int yellowCoinSymbolId = -1;
-  // public int redCoinSymbolId = -1;
 
   public int symbolCount = 0;
   public int wildSymbolId = -1;
@@ -521,7 +349,7 @@ public class GameConfig
   public int maxWinMultiplier = 10000;
   public int minWinMultiplier = 10;
   public int initialFreeSpins = 10;
-  public ExtraSpinsData extraSpinsData; // Keep to avoid compilation error in UI
+  // public ExtraSpinsData extraSpinsData; // Keep to avoid compilation error in UI
 
   /// <summary>
   /// The raw init "features" block — pig meter configuration plus the live meter state.
@@ -577,36 +405,14 @@ public class SpinResult
   public double grandTotalWin;
   public List<WinLine> winLines;
 
-  // Mystery tiles that opened this spin. resultMatrix already holds the REVEALED symbol at
-  // each of these positions — this list only says which cells were behind a locker, so the
-  // client can cover them and play the reveal.
-  public List<ServerMysteryReveal> mysteryReveals;
-
-  // Coins stamped on landed cells this spin, in server order. The order matters: the
-  // client attributes meter movement to coins by walking this list against the meter diff.
-  public List<ServerCoinOverlay> coinOverlays;
-
-  // Meter values AFTER this spin, server-authoritative. Diffed against the client's cached
-  // snapshot to work out which coin moved which meter and by how much.
-  public ServerMeters meters;
-
-  public List<ServerJackpotWin> jackpotWins;
-  public List<string> triggeredFeatures;
-  public List<string> activeFeature;
-  public Dictionary<string, int> yellowFSCollections;
-
   public PlayerData playerData;
   public ServerScatter scatter;
-  public FreeSpinData freeSpinData;
-  public ScatterData scatterData;
-  public OverlayScatterData overlayScatterData; // Keep for safety/UI compilation
-  public Dictionary<string, int> stickyWilds;  // Keep for safety/UI compilation
+
 
   // Server-authoritative free spin state
   public int serverSpinsRemaining;
-  public int serverSpinsUsed;
-  public int serverTotalSpins;
-  public double serverTotalRoundWin;
+  
+  
   public bool isRoundOver;
 
   public double baseLineWin;
@@ -628,31 +434,6 @@ public class WinLine
   public double winAmount;
 }
 
-[Serializable]
-public class FreeSpinData
-{
-  public bool isTriggered;
-  public int spinsAwarded;
-  public int remainingSpins;
-  public bool isBought;
-}
-
-[Serializable]
-public class ScatterData
-{
-  public bool isTriggered;
-  public int scatterCount;
-  public double winAmount;
-}
-
-[Serializable]
-public class OverlayScatterData
-{
-  public bool isTriggered;
-  public int count;
-  public int extraSpins;
-  public List<List<int>> positions;
-}
 
 #endregion
 
@@ -729,10 +510,6 @@ public static class InitDataConverter
     {
       config.bonusSymbolId = serverData.features.christmasGiftsBonus.bonusSymbolId;
     }
-    else if (serverData.features?.treasureHunt != null && serverData.features.treasureHunt.bonusSymbolId >= 0)
-    {
-      config.bonusSymbolId = serverData.features.treasureHunt.bonusSymbolId;
-    }
 
     if (serverData.uiData?.paylines?.symbols != null)
     {
@@ -798,14 +575,6 @@ public static class InitDataConverter
           }
         }
         config.symbols.Add(symbolInfo);
-        // switch (serverSymbol.name.ToLower())
-        // {
-        //   case "wild": config.wildSymbolId = symbolInfo.id; break;
-        //   case "mystery": config.mysterySymbolId = symbolInfo.id; break;
-        //   case "bluecoin": config.blueCoinSymbolId = symbolInfo.id; break;
-        //   case "yellowcoin": config.yellowCoinSymbolId = symbolInfo.id; break;
-        //   case "redcoin": config.redCoinSymbolId = symbolInfo.id; break;
-        // }
       }
     }
 
@@ -818,63 +587,6 @@ public static class InitDataConverter
     }
 
     return config;
-  }
-  internal static GameConfig ConvertToGameConfig(Root root)
-  {
-      var config = new GameConfig
-      {
-          reelCount = (root.gameData?.lines != null && root.gameData.lines.Count > 0) ? root.gameData.lines[0].Count : 5,
-          rowCount = 3,
-          paylineCount = (root.gameData?.lines != null && root.gameData.lines.Count > 0) 
-              ? root.gameData.lines.Count 
-              : (root.gameData != null && root.gameData.totalLines > 0 ? root.gameData.totalLines : 20),
-          paylines = root.gameData?.lines,
-          availableBets = root.gameData?.bets,
-          creditDivisor = (root.gameData?.lines != null && root.gameData.lines.Count > 0) 
-              ? root.gameData.lines.Count 
-              : (root.gameData != null && root.gameData.totalLines > 0 ? root.gameData.totalLines : 20),
-          symbols = new List<SymbolInfo>(),
-          rootData = root
-      };
-
-      if (root.uiData?.paylines?.symbols != null)
-      {
-          foreach (var sym in root.uiData.paylines.symbols)
-          {
-              var symInfo = new SymbolInfo
-              {
-                  id = sym.id,
-                  name = sym.name,
-                  description = sym.description,
-                  multipliers = new List<double>(),
-                  matchCounts = new List<int>(),
-                  isWild = sym.name != null && sym.name.ToLower().Contains("wild")
-              };
-              var defaultPayout = GetWheresSantaDefaultPayout(sym.id);
-              if (defaultPayout != null)
-              {
-                  foreach (var entry in defaultPayout)
-                  {
-                      symInfo.matchCounts.Add(entry.Key);
-                      symInfo.multipliers.Add(entry.Value);
-                  }
-                  if (symInfo.matchCounts.Count > 0)
-                      symInfo.minMatch = symInfo.matchCounts[symInfo.matchCounts.Count - 1];
-              }
-              config.symbols.Add(symInfo);
-          }
-      }
-
-      if (root.features?.wildSubstitution?.wildSymbolIds?.Count > 0)
-          config.wildSymbolId = root.features.wildSubstitution.wildSymbolIds[0];
-
-      if (root.features?.scatter != null)
-          config.scatterSymbolId = root.features.scatter.scatterSymbolId;
-
-      if (root.features?.christmasGiftsBonus != null && root.features.christmasGiftsBonus.bonusSymbolId >= 0)
-          config.bonusSymbolId = root.features.christmasGiftsBonus.bonusSymbolId;
-      
-      return config;
   }
 
   public static List<KeyValuePair<int, double>> GetWheresSantaDefaultPayout(int symbolId)
@@ -952,19 +664,7 @@ public static class InitDataConverter
     }
   }
 
-  public static List<KeyValuePair<int, double>> GetTreasureCatsDefaultPayout(int symbolId)
-  {
-    return GetWheresSantaDefaultPayout(symbolId);
-  }
 
-  internal static PlayerData ConvertToPlayerData(Player player)
-  {
-      return new PlayerData
-      {
-          balance = player != null ? player.balance : 0,
-          currentBetIndex = 0
-      };
-  }
   /// <summary>Columns: the width of a payline, else 5.</summary>
   private static int DeriveReelCount(ServerGameData gameData)
   {
@@ -1045,37 +745,15 @@ public static class InitDataConverter
       grandTotalWin = winAmountVal,
       winLines = lines,
 
-      // Carried verbatim — positions are [row, col] and index the SAME grid as resultMatrix,
-      // which already contains the revealed symbol at each of them.
-      mysteryReveals = payload?.mysteryReveals,
-      coinOverlays = payload?.coinOverlays,
-
-      // Meter state and feature signalling. meters is what the coin flight beat diffs
-      // against its cached snapshot to decide which meter each coin moved.
-      meters = payload?.meters,
-      jackpotWins = payload?.jackpotWin,
-      triggeredFeatures = payload?.triggeredFeatures,
-      activeFeature = payload?.activeFeature,
-      yellowFSCollections = payload?.yellowFSCollections,
-
       playerData = new PlayerData
       {
         balance = newBalance,
         currentBetIndex = 0
       },
 
-      // [CNY] Free-spin / scatter / feature payloads are re-authored once the piggy
-      // trigger lands. Rich Piggies signals a feature through payload.activeFeature.
-      // freeSpinData = null,
-      // scatterData = null,
-      // overlayScatterData = null,
-      // stickyWilds = null,
       scatter = scatterObj,
 
       serverSpinsRemaining = spinsRemaining,
-      serverSpinsUsed = 0,
-      serverTotalSpins = scatterObj != null ? scatterObj.spinsAwarded : 0,
-      serverTotalRoundWin = winAmountVal,
       isRoundOver = spinsRemaining <= 0,
 
       baseLineWin = payload != null ? payload.baseLineWin : 0,
@@ -1175,54 +853,6 @@ public static class InitDataConverter
     return true;
   }
 
-  /// <summary>
-  /// Transpose the server's ROW-major matrix (3 rows x 5 cols) into the client's
-  /// COLUMN-major resultMatrix[col][row], which is what SlotView indexes by reel.
-  /// </summary>
-  
-  private static List<List<int>> ConvertReelsToMatrix(List<List<string>> serverMatrix, GameConfig gameConfig)
-  {
-    var sourceReels = serverMatrix;
-    int rowCount = gameConfig != null ? gameConfig.rowCount : 3;
-
-    if (sourceReels == null || sourceReels.Count == 0)
-    {
-      UnityEngine.Debug.LogError("Invalid server reels/matrix: sourceReels is null or empty");
-      return GenerateDefaultMatrix(rowCount);
-    }
-
-    int totalRows = sourceReels.Count;
-    int totalCols = sourceReels[0].Count;
-
-    var matrix = new List<List<int>>();
-
-    for (int col = 0; col < totalCols; col++)
-    {
-      var column = new List<int>();
-      for (int row = 0; row < totalRows; row++)
-      {
-        if (col >= sourceReels[row].Count)
-        {
-          UnityEngine.Debug.LogError($"Invalid server data at row {row}, col {col}");
-          column.Add(0);
-          continue;
-        }
-
-        string symbolStr = sourceReels[row][col];
-        if (!int.TryParse(symbolStr, out int symbolId))
-        {
-          UnityEngine.Debug.LogError($"Failed to parse symbol: {symbolStr}");
-          column.Add(0);
-          continue;
-        }
-
-        column.Add(symbolId);
-      }
-      matrix.Add(column);
-    }
-
-    return matrix;
-  }
   private static List<List<int>> ConvertReelsToMatrix(List<List<int>> payloadMatrix, List<List<string>> rootMatrix, GameConfig gameConfig)
   {
     int rowCount = gameConfig != null ? gameConfig.rowCount : 3;

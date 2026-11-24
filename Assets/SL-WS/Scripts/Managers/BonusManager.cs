@@ -89,8 +89,8 @@ public class BonusManager : MonoBehaviour
 
     private void Start()
     {
-        if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
-        if (uiManager == null) uiManager = FindObjectOfType<UIManager>();
+        if (gameManager == null) gameManager = FindFirstObjectByType<GameManager>();
+        if (uiManager == null) uiManager = FindFirstObjectByType<UIManager>();
 
         EnsureBackgroundReferences();
         UpdateBonusOrientationLayout(IsPortraitMode());
@@ -562,7 +562,7 @@ public class BonusManager : MonoBehaviour
 
     public bool IsPortraitMode()
     {
-        var oc = FindObjectOfType<OrientationChange>();
+        var oc = FindFirstObjectByType<OrientationChange>();
         if (oc != null)
         {
             return oc.CurrentMode == OrientationChange.OrientationMode.MobilePortrait;

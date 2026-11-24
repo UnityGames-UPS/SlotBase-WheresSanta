@@ -282,13 +282,6 @@ internal class WinPopupController : MonoBehaviour
   {
     return false;
 
-    // if (winAmount <= 0) return false;
-    // var tier = GetBigWinTier();
-    // if (tier == null) return false;
-
-    // double multiplier = totalPay > 0 ? winAmount / totalPay : 0;
-    // return multiplier >= tier.minMultiplier;
-
   }
 
   /// <summary>
@@ -367,33 +360,6 @@ internal class WinPopupController : MonoBehaviour
                        "parent.", this);
       }
     }
-
-    /*
-    if (tier.spineGraphic == null && tier.popupRoot != null)
-      tier.spineGraphic = tier.popupRoot.GetComponentInChildren<SkeletonGraphic>(true);
-
-    if (tier.spineGraphic != null)
-    {
-      if (!tier.spineGraphic.IsValid)
-        tier.spineGraphic.Initialize(true);
-
-      tier.spineGraphic.Skeleton?.SetToSetupPose();
-      tier.spineGraphic.AnimationState?.ClearTracks();
-
-      if (!string.IsNullOrEmpty(tier.popUpAnimation))
-      {
-        tier.spineGraphic.AnimationState?.SetAnimation(0, tier.popUpAnimation, false);
-        if (!string.IsNullOrEmpty(tier.loopAnimation))
-          tier.spineGraphic.AnimationState?.AddAnimation(0, tier.loopAnimation, true, 0f);
-      }
-      else if (!string.IsNullOrEmpty(tier.loopAnimation))
-      {
-        tier.spineGraphic.AnimationState?.SetAnimation(0, tier.loopAnimation, true);
-      }
-
-      tier.spineGraphic.Update(0f);
-    }
-    */
 
     if (tier.tierImage != null && tier.tierSprite != null)
       tier.tierImage.sprite = tier.tierSprite;
@@ -513,11 +479,6 @@ internal class WinPopupController : MonoBehaviour
 
     double multiplier = totalPay > 0 ? winAmount / totalPay : 0;
     return multiplier >= tier.minMultiplier ? tier : null;
-  }
-
-  private WinTier LowestTier()
-  {
-    return GetBigWinTier();
   }
 
   private void StartBackgroundAnimation(WinTier tier)

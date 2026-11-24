@@ -32,11 +32,6 @@ public class OCController : MonoBehaviour
     [SerializeField] private Vector3 landscapeSlotPosition = Vector3.zero;
     [SerializeField] private Vector3 portraitSlotPosition = new Vector3(0f, -150f, 0f);
 
-    [Header("Motar Piggy Animation Settings")]
-    [SerializeField] private RectTransform motarPiggyObject;
-    [SerializeField] private float landscapeMotarPiggyY = -9f;
-    [SerializeField] private float portraitMotarPiggyY = -228.14f;
-
     [Header("Info Page & Guide Settings")]
     [SerializeField] private RectTransform infoPageScrollObject;
     [SerializeField] private RectTransform guideScrollObject;
@@ -141,21 +136,6 @@ public class OCController : MonoBehaviour
             {
                 slotObject.localScale = targetScale;
                 slotObject.localPosition = targetPosition;
-            }
-        }
-
-        // 5. Update Motar Piggy Animation Y Position
-        if (motarPiggyObject != null)
-        {
-            float targetY = isMobilePortrait ? portraitMotarPiggyY : landscapeMotarPiggyY;
-            if (transitionDuration > 0)
-            {
-                Tween piggyTween = motarPiggyObject.DOAnchorPosY(targetY, transitionDuration).SetEase(Ease.OutCubic);
-                activeTweens.Add(piggyTween);
-            }
-            else
-            {
-                motarPiggyObject.anchoredPosition = new Vector2(motarPiggyObject.anchoredPosition.x, targetY);
             }
         }
 

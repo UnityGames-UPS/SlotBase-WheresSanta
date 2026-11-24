@@ -92,14 +92,6 @@ public class SlotView : MonoBehaviour
   [SerializeField] private RectTransform winAnimationLayer;
   [SerializeField] private GameObject squareWinHolder;
 
-  [Tooltip("How many times stage 2 walks the full list of winning lines before the " +
-           "presentation settles into its idle loop.")]
-  [SerializeField] private int phase2Repeats = 2;
-
-  [Tooltip("Pause between stages, and between repeats of the idle loop. Winning symbols stay " +
-           "lit on their last frame through it.")]
-  [SerializeField] private float phaseGapDelay = 1f;
-
   [Tooltip("Pause after each individual line in stage 2.")]
   [SerializeField] private float phase2LineDelay = 1f;
 
@@ -158,40 +150,6 @@ public class SlotView : MonoBehaviour
   private List<SlotSymbolView>[] fillerCellsByColumn;
 
   internal List<List<int>> currentDisplayMatrix;
-
-  // Cells currently covered by a Mystery locker, populated the moment the result arrives and
-  // drained when the reveal finishes.
-  private readonly List<SlotSymbolView> activeLockers = new List<SlotSymbolView>();
-
-  // Cells showing a coin this spin, in server order, each paired with the plan saying what
-  // that coin does to its meter when it lands. Populated the moment the result arrives,
-  // drained when the flights finish.
-  private readonly List<SlotSymbolView> activeCoinCells = new List<SlotSymbolView>();
-  // private readonly List<CoinPlan> activeCoinPlans = new List<CoinPlan>();
-  private ServerMeters pendingMeters;
-
-  // Set for the round-ending free spin: its meters are already the server's post-round reset,
-  // which FreeSpinPresenter applies when the congratulations popup opens. Coin landings still
-  // tick the texts; only the hard resync to pendingMeters is skipped.
-  private bool deferMeterResync;
-
-  // In-flight coin chains and the jackpot coins they spawned, tracked so a spin interrupting
-  // the beat can stop them and destroy the instances instead of leaking them onto the layer.
-  private readonly List<Coroutine> coinRoutines = new List<Coroutine>();
-  private readonly List<GameObject> spawnedJackpotCoins = new List<GameObject>();
-
-  // Jackpot coins (coinOverlays ids 15-20) during Yellow free spins, in server order. Each is
-  // stamped on its cell with the result and flies straight to its jackpot panel to fill a
-  // hole. Drained after the pig coin flights.
-  private struct JackpotHit
-  {
-    internal int row;
-    internal int col;
-    internal string tier;
-    internal SlotSymbolView cell;   // null when the coin could not be stamped
-  }
-
-  private readonly List<JackpotHit> pendingJackpotHits = new List<JackpotHit>();
 
   private bool isSpinning;
 
@@ -456,19 +414,6 @@ public class SlotView : MonoBehaviour
       return Random.Range(0, symbolSprites != null ? symbolSprites.Length : 12);
   }
 
-  // Returns a random paying symbol that is NOT Wild, Scatter, or Bonus.
-  private int RandomNonWildSymbolId()
-  {
-    if (gameManager?.gameConfig?.symbols != null && gameManager.gameConfig.symbols.Count > 0)
-    {
-      var nonWilds = gameManager.gameConfig.symbols.FindAll(s => s != null && !IsWildSymbol(s.id) && !s.isWild && !s.isScatter && s.id != scatterSymbolId && s.id != bonusSymbolId);
-      if (nonWilds.Count > 0)
-        return nonWilds[Random.Range(0, nonWilds.Count)].id;
-    }
-    int max = symbolSprites != null ? symbolSprites.Length : 12;
-    return Random.Range(3, max);
-  }
-
   private SlotSymbolView ResultCell(int col, int row)
   {
     if (resultCells == null || col < 0 || col >= resultCells.Count) return null;
@@ -514,23 +459,6 @@ public class SlotView : MonoBehaviour
         // ApplySymbol(cell, visualSymbolId);
         ApplySymbol(cell, symbolId);
       }
-    }
-  }
-
-  /// <summary>Place a matrix with no spin at all (init / reconnect).</summary>
-  internal void SetInitialMatrix(List<List<int>> matrix)
-  {
-    if (matrix == null) return;
-
-    ShuffleAllCells();
-    PopulateResultMatrix(matrix);
-
-    if (reelTransforms == null) return;
-    for (int col = 0; col < reelTransforms.Length; col++)
-    {
-      if (reelTransforms[col] == null) continue;
-      var p = reelTransforms[col].localPosition;
-      reelTransforms[col].localPosition = new Vector3(p.x, restY, p.z);
     }
   }
 
@@ -632,10 +560,6 @@ public class SlotView : MonoBehaviour
     // {
     //   if (cell != null) ApplySymbol(cell, RandomNonWildSymbolId());
     // }
-
-    // ResetAllCellVisuals already hid any locker still up from an interrupted reveal; this
-    // drops our claim on those cells so the new round starts from an empty list.
-    activeLockers.Clear();
 
 
     // Deliberately NOT shuffling here. At this moment the column is parked at restY with
@@ -839,56 +763,6 @@ public class SlotView : MonoBehaviour
     }
     return false;
   }
-
-    /*
-  private void CheckAndSpawnStickyWilds()
-  {
-    if (gameManager == null || !gameManager.isInFreeSpins || winAnimationLayer == null) return;
-
-    for (int col = 0; col < ReelCount; col++)
-    {
-      for (int row = 0; row < RowCount; row++)
-      {
-        var cell = ResultCell(col, row);
-        // if (cell != null && cell.SymbolId == 0 && !stickyWilds.ContainsKey(cell) && cell.spineGraphic != null)
-        if (cell != null && IsWildSymbol(cell.SymbolId) && !stickyWilds.ContainsKey(cell) && cell.spineGraphic != null)
-        {
-          var wildGo = Instantiate(cell.spineGraphic.gameObject, winAnimationLayer);
-          wildGo.transform.position = cell.spineGraphic.transform.position;
-          // wildGo.transform.position = cell.transform.position;
-          wildGo.transform.localScale = cell.spineGraphic.transform.localScale;
-          wildGo.SetActive(true);
-
-          var sg = wildGo.GetComponent<SkeletonGraphic>();
-          if (sg != null)
-          {
-            sg.freeze = false;
-            sg.allowMultipleCanvasRenderers = true;
-            var skel = GetSymbolSkeleton(cell.SymbolId) ?? GetSymbolSkeleton(0);
-            if (skel != null) sg.skeletonDataAsset = skel;
-            sg.startingAnimation = "animation";
-            sg.startingLoop = true;
-            sg.Initialize(true);
-            if (sg.canvasRenderers != null)
-            {
-              foreach (var cr in sg.canvasRenderers)
-                if (cr != null) cr.gameObject.SetActive(true);
-            }
-            var anim = sg.Skeleton?.Data?.FindAnimation("animation") ?? (sg.Skeleton?.Data?.Animations?.Count > 0 ? sg.Skeleton.Data.Animations.Items[0] : null);
-            if (anim != null) sg.AnimationState?.SetAnimation(0, anim.Name, true);
-            sg.Update(0);
-            // sg.allowMultipleCanvasRenderers = true;
-            // sg.skeletonDataAsset = GetSymbolSkeleton(0);
-            // sg.Initialize(true);
-            // sg.AnimationState.SetAnimation(0, "animation", true);
-          }
-
-          stickyWilds[cell] = wildGo;
-        }
-      }
-    }
-  }
-    */
 
   internal void ClearStickyWilds()
   {
@@ -1108,7 +982,7 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     }
 
     bool isTurbo = gameManager != null && gameManager.currentSpinSpeed != SpinSpeed.Normal;
-    if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins || isTurbo || HasScatterWin || HasBonusWin))
+    if (gameManager != null && (gameManager.isAutoPlaying || gameManager.isInFreeSpins || HasScatterWin || HasBonusWin))
     {
       var wins = ResolveWinCells(allWinPositions);
       if (wins.Count > 0 && !showPopup)
@@ -1246,8 +1120,8 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
 
     if (chosenFlat < 0) chosenFlat = winLine.positions[winLine.positions.Count - 1];
 
-    DecodeFlatIndex(chosenFlat, out int textCol, out int textRow);
-    return ResultCell(textCol, textRow);
+    DecodeFlatIndex(chosenFlat, out _, out int textRow);
+    return ResultCell(winTextColumnIndex, textRow) ?? ResultCell(winTextColumnIndex, RowCount / 2);
   }
 
   /// <summary>
@@ -1351,7 +1225,6 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     // In line order, so sibling draw order on the layer stays stable.
     foreach (var win in wins)
     {
-      // if (stickyWilds.ContainsKey(win.cell)) continue;
       if (liftedWinCells.Add(win.cell)) win.cell.MoveToAnimationLayer(winAnimationLayer);
     }
   }
@@ -1372,7 +1245,6 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
 
     foreach (var (cell, symbolId) in wins)
     {
-      // if (stickyWilds.ContainsKey(cell)) continue;
       if (winAnimById == null) BuildWinAnimLookup();
       if (!winAnimById.TryGetValue(symbolId, out var anim) || anim == null)
       {
@@ -1448,11 +1320,6 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     SetSquareWinActive(null);
   }
 
-  internal void ShowNoWinOverlay()
-  {
-    winOverlayHeld = true;
-    SetWinOverlayActive(true);
-  }
 
   /// <summary>Drop the presentation's claim on the darkening panel and take it down.</summary>
   private void ReleaseWinOverlay()
@@ -1566,36 +1433,6 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     SetWinOverlayActive(false);
   }
 
-  /// <summary>
-  /// Release the feature's hold and fade the panel out, rather than cutting it. Yields until
-  /// the fade finishes so a caller can sequence the reels' return behind it.
-  /// </summary>
-  internal IEnumerator FadeOutOverlay(float duration)
-  {
-    featureOverlayHeld = false;
-    winOverlayHeld = false;
-
-    if (winDarkenOverlay == null) yield break;
-
-    var image = winDarkenOverlay.GetComponent<Graphic>();
-    if (image == null || duration <= 0f)
-    {
-      SetWinOverlayActive(false);
-      yield break;
-    }
-
-    // Cached and restored, because the panel's authored alpha is what every later SetActive
-    // path relies on — fading it and leaving it at 0 would make the next win's darkening
-    // silently invisible.
-    float startAlpha = image.color.a;
-    yield return image.DOFade(0f, duration).SetEase(Ease.InQuad).WaitForCompletion();
-
-    SetWinOverlayActive(false);
-
-    var restored = image.color;
-    restored.a = startAlpha;
-    image.color = restored;
-  }
 
   private void SetWinOverlayActive(bool active)
   {
@@ -1635,10 +1472,12 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
 
   #region Symbol info card
 
+  
   internal void HideSymbolInfoCard()
   {
     if (symbolInfoCard != null) symbolInfoCard.HideCard();
   }
+
 
   internal void OnBetChanged()
   {
@@ -1740,25 +1579,6 @@ private IEnumerator PlayWinPresentation(List<WinLine> winLines, System.Action on
     KillAllTweens();
     KillWinTweens();
     ClearStickyWilds();
-  }
-  private void DrawAllWinLines(List<WinLine> winLines)
-  {
-      if (payCalculator == null || gameManager?.gameConfig?.paylines == null) return;
-      payCalculator.ResetLines();
-
-      foreach (var winLine in winLines)
-      {
-          if (winLine.lineId >= 0 && winLine.lineId < gameManager.gameConfig.paylines.Count)
-          {
-              List<int> rowIndices = gameManager.gameConfig.paylines[winLine.lineId];
-              payCalculator.GeneratePayoutLinesBackend(rowIndices, rowIndices.Count);
-          }
-      }
-  }
-
-  private void DrawSingleWinLine(WinLine winLine)
-  {
-      payCalculator?.ResetLines();
   }
 
   #endregion
